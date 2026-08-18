@@ -36,7 +36,14 @@ class WordPressContentTransformer
         // 5. Clean consecutive empty paragraph tags
         $cleaned = preg_replace('/<p>\s*(<br\s*\/?>)?\s*<\/p>/i', '', $cleaned);
 
-        // 6. Fix broken encoded characters
+        // 6. Rewrite wp-content/uploads URLs to local storage URLs
+        $cleaned = preg_replace(
+            '#(https?://[^/\s"\']+|)/wp-content/uploads/#i',
+            '/storage/media/',
+            $cleaned
+        );
+
+        // 7. Fix broken encoded characters
         $cleaned = html_entity_decode($cleaned, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
         return trim($cleaned);

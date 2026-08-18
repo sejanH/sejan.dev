@@ -4,12 +4,12 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class AuthAndDashboardTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     public function test_login_screen_can_be_rendered(): void
     {
@@ -49,7 +49,7 @@ class AuthAndDashboardTest extends TestCase
 
         $adminResponse = $this->get('/admin');
         $adminResponse->assertStatus(200);
-        $adminResponse->assertSee('Migration Command Center');
+        $adminResponse->assertSeeText('Analytics & Overview', false);
         $adminResponse->assertSee('admin@sejan.dev');
     }
 

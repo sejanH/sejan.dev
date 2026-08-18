@@ -7,18 +7,20 @@ use App\Models\Media;
 use App\Models\Post;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class MediaAndCommentsTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected function setUp(): void
     {
         parent::setUp();
+        \Illuminate\Support\Facades\RateLimiter::clear('comment|127.0.0.1');
+        $this->withoutMiddleware(\Spatie\Honeypot\ProtectAgainstSpam::class);
         $this->seed(DatabaseSeeder::class);
     }
 
@@ -76,7 +78,6 @@ class MediaAndCommentsTest extends TestCase
             'author_name' => 'Jane Reader',
             'author_email' => 'jane@example.com',
             'content' => 'This is a fantastic technical explanation.',
-            'website_hp' => '', // Empty honeypot
         ]);
 
         $response->assertStatus(302);

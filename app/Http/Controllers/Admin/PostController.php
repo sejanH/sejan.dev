@@ -21,11 +21,17 @@ class PostController extends Controller
         $status = $request->query('status');
         $search = $request->query('q');
 
-        $query = Post::with(['user', 'categories', 'tags'])
-            ->latest('created_at');
+        if ($status === 'trashed') {
+            $query = Post::onlyTrashed()
+                ->with(['user', 'categories', 'tags'])
+                ->latest('deleted_at');
+        } else {
+            $query = Post::with(['user', 'categories', 'tags'])
+                ->latest('created_at');
 
-        if (!empty($status)) {
-            $query->where('status', $status);
+            if (!empty($status)) {
+                $query->where('status', $status);
+            }
         }
 
         if (!empty($search)) {
@@ -41,6 +47,7 @@ class PostController extends Controller
             'totalCount' => Post::count(),
             'publishedCount' => Post::where('status', 'published')->count(),
             'draftCount' => Post::where('status', 'draft')->count(),
+            'trashCount' => Post::onlyTrashed()->count(),
         ]);
     }
 
@@ -73,6 +80,8 @@ class PostController extends Controller
             'is_featured' => ['nullable', 'boolean'],
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:500'],
+            'canonical_url' => ['nullable', 'string', 'max:255'],
+            'published_at' => ['nullable', 'date'],
             'categories' => ['nullable', 'array'],
             'categories.*' => ['exists:categories,id'],
             'tags_input' => ['nullable', 'string'],
@@ -80,7 +89,9 @@ class PostController extends Controller
 
         $slug = !empty($validated['slug']) ? Str::slug($validated['slug']) : Str::slug($validated['title']);
         $isFeatured = $request->boolean('is_featured');
-        $publishedAt = $validated['status'] === 'published' ? now() : null;
+        $publishedAt = !empty($validated['published_at'])
+            ? Carbon::parse($validated['published_at'])
+            : ($validated['status'] === 'published' ? now() : null);
 
         $post = Post::create([
             'user_id' => auth()->id(),
@@ -94,6 +105,7 @@ class PostController extends Controller
             'is_featured' => $isFeatured,
             'meta_title' => $validated['meta_title'] ?? null,
             'meta_description' => $validated['meta_description'] ?? null,
+            'canonical_url' => $validated['canonical_url'] ?? null,
         ]);
 
         if (!empty($validated['categories'])) {
@@ -111,7 +123,7 @@ class PostController extends Controller
             $post->tags()->sync($tagIds);
         }
 
-        return redirect()->route('admin.posts.index')->with('status', 'Article created successfully!');
+        return redirect()->route('admin.posts.edit', $post)->with('status', 'Article created successfully!');
     }
 
     /**
@@ -148,12 +160,17 @@ class PostController extends Controller
             'is_featured' => ['nullable', 'boolean'],
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:500'],
+            'canonical_url' => ['nullable', 'string', 'max:255'],
+            'published_at' => ['nullable', 'date'],
             'categories' => ['nullable', 'array'],
             'categories.*' => ['exists:categories,id'],
             'tags_input' => ['nullable', 'string'],
         ]);
 
-        $publishedAt = $post->published_at;
+        $publishedAt = !empty($validated['published_at'])
+            ? Carbon::parse($validated['published_at'])
+            : $post->published_at;
+
         if ($validated['status'] === 'published' && empty($publishedAt)) {
             $publishedAt = now();
         }
@@ -169,6 +186,7 @@ class PostController extends Controller
             'is_featured' => $request->boolean('is_featured'),
             'meta_title' => $validated['meta_title'] ?? null,
             'meta_description' => $validated['meta_description'] ?? null,
+            'canonical_url' => $validated['canonical_url'] ?? null,
         ]);
 
         $post->categories()->sync($validated['categories'] ?? []);
@@ -183,15 +201,43 @@ class PostController extends Controller
             $post->tags()->sync($tagIds);
         }
 
-        return redirect()->route('admin.posts.index')->with('status', 'Article updated successfully!');
+        return redirect()->route('admin.posts.edit', $post)->with('status', 'Article updated successfully!');
     }
 
     /**
-     * Delete a post.
+     * Delete a post (Soft delete to trash).
      */
     public function destroy(Post $post): RedirectResponse
     {
+        $title = $post->title;
         $post->delete();
-        return redirect()->route('admin.posts.index')->with('status', 'Article removed.');
+
+        return redirect()->route('admin.posts.index')->with('status', "Article '{$title}' moved to trash.");
+    }
+
+    /**
+     * Restore a soft-deleted post from trash.
+     */
+    public function restore(int|string $id): RedirectResponse
+    {
+        $post = Post::onlyTrashed()->findOrFail($id);
+        $title = $post->title;
+        $post->restore();
+
+        return redirect()->route('admin.posts.index', ['status' => 'trashed'])
+            ->with('status', "Article '{$title}' has been restored successfully.");
+    }
+
+    /**
+     * Permanently delete a post from database.
+     */
+    public function forceDelete(int|string $id): RedirectResponse
+    {
+        $post = Post::onlyTrashed()->findOrFail($id);
+        $title = $post->title;
+        $post->forceDelete();
+
+        return redirect()->route('admin.posts.index', ['status' => 'trashed'])
+            ->with('status', "Article '{$title}' has been permanently deleted.");
     }
 }

@@ -1,15 +1,19 @@
 <?php
 
 use App\Http\Controllers\Admin\CommentController as AdminCommentController;
+use App\Http\Controllers\Admin\ContactMessageController as AdminMessageController;
 use App\Http\Controllers\Admin\MediaController as AdminMediaController;
 use App\Http\Controllers\Admin\PostController as AdminPostController;
 use App\Http\Controllers\Admin\RedirectController as AdminRedirectController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\WordPressMigrationController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FeedAndSeoController;
 use Illuminate\Support\Facades\Route;
+use Spatie\Honeypot\ProtectAgainstSpam;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,10 +22,23 @@ use Illuminate\Support\Facades\Route;
 */
 Route::get('/', [BlogController::class, 'index'])->name('home');
 Route::get('/posts/{slug}', [BlogController::class, 'show'])->name('blog.show');
-Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->name('comments.store');
+Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->middleware(ProtectAgainstSpam::class)->name('comments.store');
 Route::get('/category/{slug}', [BlogController::class, 'category'])->name('blog.category');
 Route::get('/tag/{slug}', [BlogController::class, 'tag'])->name('blog.tag');
 Route::get('/about', [BlogController::class, 'about'])->name('blog.about');
+Route::get('/contact', [BlogController::class, 'contact'])->name('blog.contact');
+Route::post('/contact', [BlogController::class, 'handleContact'])->middleware(ProtectAgainstSpam::class)->name('blog.contact.send');
+
+/*
+|--------------------------------------------------------------------------
+| SEO Sitemaps, RSS/Atom Feeds & Robots.txt
+|--------------------------------------------------------------------------
+*/
+Route::get('/sitemap.xml', [FeedAndSeoController::class, 'sitemap'])->name('sitemap.xml');
+Route::get('/feed', [FeedAndSeoController::class, 'rss'])->name('feed.rss');
+Route::get('/rss.xml', [FeedAndSeoController::class, 'rss'])->name('feed.rss.xml');
+Route::get('/feed/atom', [FeedAndSeoController::class, 'atom'])->name('feed.atom');
+Route::get('/robots.txt', [FeedAndSeoController::class, 'robots'])->name('robots.txt');
 
 /*
 |--------------------------------------------------------------------------
@@ -51,6 +68,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('admin.dashboard');
 
         // Blog Posts Management (/admin/posts)
+        Route::put('/posts/{id}/restore', [AdminPostController::class, 'restore'])->name('admin.posts.restore');
+        Route::delete('/posts/{id}/force-delete', [AdminPostController::class, 'forceDelete'])->name('admin.posts.forceDelete');
         Route::resource('posts', AdminPostController::class, ['as' => 'admin']);
 
         // Media Library (/admin/media)
@@ -75,6 +94,17 @@ Route::middleware('auth')->group(function () {
         Route::get('/redirects', [AdminRedirectController::class, 'index'])->name('admin.redirects.index');
         Route::post('/redirects', [AdminRedirectController::class, 'store'])->name('admin.redirects.store');
         Route::delete('/redirects/{redirect}', [AdminRedirectController::class, 'destroy'])->name('admin.redirects.destroy');
+
+        // Contact Messages Inbox (/admin/messages)
+        Route::get('/messages', [AdminMessageController::class, 'index'])->name('admin.messages.index');
+        Route::get('/messages/{message}', [AdminMessageController::class, 'show'])->name('admin.messages.show');
+        Route::put('/messages/{message}/toggle-read', [AdminMessageController::class, 'toggleRead'])->name('admin.messages.toggle');
+        Route::delete('/messages/{message}', [AdminMessageController::class, 'destroy'])->name('admin.messages.destroy');
+
+        // User & Role Management (/admin/users)
+        Route::middleware('role:admin')->group(function () {
+            Route::resource('users', AdminUserController::class, ['as' => 'admin']);
+        });
     });
 });
 

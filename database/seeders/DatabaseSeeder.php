@@ -15,6 +15,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // 1. Seed Roles and Permissions
+        $this->call(RolesAndPermissionsSeeder::class);
+
         $adminEmail = env('ADMIN_EMAIL', 'admin@sejan.dev');
         $adminPassword = env('ADMIN_PASSWORD', 'password');
         $adminName = env('ADMIN_NAME', 'Sejan (Admin)');
@@ -29,6 +32,7 @@ class DatabaseSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
+        $admin->syncRoles(['admin']);
 
         // Seed Categories
         $catLaravel = \App\Models\Category::firstOrCreate(['slug' => 'laravel'], ['name' => 'Laravel 12', 'description' => 'Modern PHP & Laravel framework techniques, features, and optimizations.']);

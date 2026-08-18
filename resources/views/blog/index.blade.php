@@ -1,197 +1,241 @@
 @extends('layouts.blog')
 
-@section('title', 'sejan.dev — Modern Software Engineering & Architecture Blog')
-@section('meta_description', 'Articles, architectural tutorials, Laravel best practices, and WordPress to modern stack migrations.')
+@section('title', 'Sejan · Blog — Technology, Architecture & Modern Development')
+@section('meta_description', 'Engineering insights, software architecture breakdowns, PHP/Laravel patterns, Linux administration, and full-stack development.')
+@section('canonical_url', route('home'))
+
+@if ($posts->isNotEmpty() && $posts->first()->featured_image)
+    @section('preload_headers')
+        <link rel="preload" as="image" href="{{ $posts->first()->featured_image }}" fetchpriority="high">
+    @endsection
+@endif
+
+@section('schema_json')
+<script type="application/ld+json">
+{!! json_encode([
+    '@context' => 'https://schema.org',
+    '@graph' => [
+        [
+            '@type' => 'WebSite',
+            '@id' => route('home') . '#website',
+            'url' => route('home'),
+            'name' => 'Sejan · Blog',
+            'description' => 'Technology, Software Architecture & Modern Engineering by Sejan',
+            'publisher' => [
+                '@type' => 'Person',
+                '@id' => route('blog.about') . '#author',
+                'name' => 'S. M. Mominul Haque (Sejan)',
+                'url' => route('blog.about'),
+                'sameAs' => [
+                    'https://www.linkedin.com/in/s-m-mominul-haque-sejan-79b77b83/',
+                    'https://twitter.com/sejanH',
+                    'https://github.com/sejanH',
+                ],
+            ],
+            'potentialAction' => [
+                '@type' => 'SearchAction',
+                'target' => [
+                    '@type' => 'EntryPoint',
+                    'urlTemplate' => route('home') . '?q={search_term_string}',
+                ],
+                'query-input' => 'required name=search_term_string',
+            ],
+        ],
+        [
+            '@type' => 'Blog',
+            '@id' => route('home') . '#blog',
+            'name' => 'Sejan · Blog',
+            'url' => route('home'),
+            'description' => 'Engineering insights, software architecture breakdowns, PHP/Laravel patterns, Linux administration, and full-stack development.',
+            'inLanguage' => 'en-US',
+            'publisher' => [
+                '@type' => 'Person',
+                'name' => 'S. M. Mominul Haque (Sejan)',
+            ],
+        ],
+        [
+            '@type' => 'BreadcrumbList',
+            '@id' => route('home') . '#breadcrumb',
+            'itemListElement' => [
+                [
+                    '@type' => 'ListItem',
+                    'position' => 1,
+                    'name' => 'Home',
+                    'item' => route('home'),
+                ],
+            ],
+        ],
+    ],
+], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) !!}
+</script>
+@endsection
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-12">
-    <!-- Search / Filter State Header (If Filtered) -->
-    @if ($search || $selectedCategorySlug)
-        <div class="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Filtering Results</span>
-                <h1 class="text-xl sm:text-2xl font-bold text-white mt-1">
-                    @if($search) Search results for &ldquo;<span class="text-red-400">{{ $search }}</span>&rdquo; @endif
-                    @if($selectedCategorySlug) in Category <span class="text-red-400">#{{ $selectedCategorySlug }}</span> @endif
-                </h1>
+    <!-- Hero Section (Show on homepage when not searching) -->
+    @if (empty($search) && empty($selectedCategorySlug) && (!request()->has('page') || request('page') == 1))
+        <section class="relative min-h-[50vh] sm:min-h-[55vh] flex items-center justify-center overflow-hidden py-16 sm:py-20 border-b border-slate-200/80 bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/50">
+            <!-- Background Radial Glow -->
+            <div class="absolute inset-0 pointer-events-none">
+                <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-emerald-300/20 blur-3xl"></div>
+                <div class="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-purple-300/20 blur-3xl"></div>
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-emerald-200/15 blur-3xl"></div>
             </div>
-            <a href="{{ route('home') }}" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 transition">
-                Clear Filters
-            </a>
-        </div>
-    @endif
 
-    <!-- Hero / Featured Post (Only when on home page root without search) -->
-    @if ($featuredPost && !$search && !$selectedCategorySlug)
-        <div class="relative rounded-3xl overflow-hidden border border-slate-800 bg-slate-900/40 p-6 sm:p-10 lg:p-12 hover:border-slate-700 transition duration-300 group">
-            <div class="absolute -right-20 -top-20 w-96 h-96 bg-red-600/10 rounded-full blur-3xl group-hover:bg-red-600/15 transition pointer-events-none"></div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
-                <div class="lg:col-span-7 space-y-4">
-                    <div class="flex flex-wrap items-center gap-2">
-                        <span class="px-3 py-1 rounded-full text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20">
-                            🌟 Featured Article
-                        </span>
-                        @if($featuredPost->categories->isNotEmpty())
-                            @foreach($featuredPost->categories->take(2) as $cat)
-                                <a href="{{ route('blog.category', $cat->slug) }}" class="px-3 py-1 rounded-full text-xs font-medium bg-slate-800/80 text-slate-300 hover:text-white border border-slate-700/60 transition">
-                                    {{ $cat->name }}
-                                </a>
-                            @endforeach
-                        @endif
-                        <span class="text-xs text-slate-400 font-mono">
-                            {{ $featuredPost->reading_time }} min read
-                        </span>
-                    </div>
-
-                    <h1 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight group-hover:text-red-400 transition">
-                        <a href="{{ route('blog.show', $featuredPost->slug) }}">
-                            {{ $featuredPost->title }}
-                        </a>
-                    </h1>
-
-                    <p class="text-slate-300 text-sm sm:text-base leading-relaxed line-clamp-3">
-                        {{ $featuredPost->excerpt }}
-                    </p>
-
-                    <div class="pt-2 flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs text-red-400">
-                                {{ strtoupper(substr($featuredPost->user->name ?? 'Admin', 0, 2)) }}
-                            </div>
-                            <div>
-                                <div class="text-xs font-bold text-white">{{ $featuredPost->user->name ?? 'Admin' }}</div>
-                                <div class="text-[11px] text-slate-400 font-mono">
-                                    {{ $featuredPost->published_at ? $featuredPost->published_at->format('M d, Y') : 'Recently Published' }}
-                                </div>
-                            </div>
-                        </div>
-
-                        <a href="{{ route('blog.show', $featuredPost->slug) }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-red-400 group-hover:text-red-300 transition">
-                            <span>Read Full Story</span>
-                            <svg class="w-4 h-4 group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                            </svg>
-                        </a>
-                    </div>
+            <!-- Hero Content -->
+            <div class="relative z-10 text-center px-4 sm:px-6 max-w-4xl mx-auto">
+                <div class="inline-flex items-center gap-2 rounded-full bg-emerald-100/80 border border-emerald-200/80 px-3.5 py-1 text-xs font-semibold text-emerald-800 mb-6 shadow-2xs">
+                    <span class="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>Engineering &amp; Modern Development</span>
                 </div>
 
-                @if($featuredPost->featured_image)
-                    <div class="lg:col-span-5">
-                        <a href="{{ route('blog.show', $featuredPost->slug) }}" class="block rounded-2xl overflow-hidden aspect-[16/10] bg-slate-800 border border-slate-700/60 shadow-xl group-hover:scale-[1.02] transition duration-300">
-                            <img src="{{ $featuredPost->featured_image }}" alt="{{ $featuredPost->title }}" class="w-full h-full object-cover" />
-                        </a>
-                    </div>
-                @else
-                    <div class="lg:col-span-5">
-                        <div class="rounded-2xl aspect-[16/10] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-slate-800 flex items-center justify-center p-8 text-center">
-                            <div class="space-y-2">
-                                <div class="w-12 h-12 rounded-2xl bg-red-500/10 text-red-400 flex items-center justify-center mx-auto border border-red-500/20">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                                    </svg>
-                                </div>
-                                <div class="text-xs font-mono text-slate-400">sejan.dev engineering</div>
-                            </div>
-                        </div>
-                    </div>
-                @endif
-            </div>
-        </div>
-    @endif
-
-    <!-- Category Filter Pills -->
-    @if ($categories->isNotEmpty())
-        <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-            <a href="{{ route('home') }}" class="px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap {{ !$selectedCategorySlug ? 'bg-red-600 text-white shadow-md shadow-red-600/20' : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800' }} transition">
-                All Articles
-            </a>
-            @foreach ($categories as $cat)
-                <a href="{{ route('blog.category', $cat->slug) }}" class="px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap {{ $selectedCategorySlug === $cat->slug ? 'bg-red-600 text-white shadow-md shadow-red-600/20' : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800' }} transition flex items-center gap-2">
-                    <span>{{ $cat->name }}</span>
-                    <span class="text-[10px] px-1.5 py-0.5 rounded-full {{ $selectedCategorySlug === $cat->slug ? 'bg-red-700 text-white' : 'bg-slate-800 text-slate-400' }}">
-                        {{ $cat->published_posts_count }}
+                <h1 class="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-slate-900 mb-6">
+                    <span class="block">Welcome to the Future of</span>
+                    <span class="block mt-2 text-4xl sm:text-6xl lg:text-7xl">
+                        <span id="rotatingWord" class="text-gradient transition-all duration-300 inline-block font-extrabold">Innovation</span>
                     </span>
-                </a>
-            @endforeach
-        </div>
+                </h1>
+
+                <p class="text-base sm:text-lg lg:text-xl text-slate-600 mb-8 max-w-2xl mx-auto leading-relaxed">
+                    Exploring the intersection of technology and creativity, one post at a time.
+                </p>
+
+                <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                    <a
+                        href="#posts"
+                        class="px-7 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full font-semibold text-white shadow-md shadow-emerald-500/20 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-emerald-500/30 flex items-center gap-2"
+                    >
+                        <span>Start Exploring</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                        </svg>
+                    </a>
+                    <a
+                        href="{{ route('blog.about') }}"
+                        class="px-7 py-3.5 border border-slate-300 rounded-full font-semibold text-slate-700 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:bg-slate-100 hover:border-slate-400 shadow-2xs"
+                    >
+                        Learn More
+                    </a>
+                </div>
+            </div>
+        </section>
     @endif
 
-    <!-- Main Grid of Articles -->
-    <div>
-        <div class="flex items-center justify-between mb-8">
-            <h2 class="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                Latest Publications
-            </h2>
-            <div class="text-xs text-slate-400 font-mono">
-                Showing {{ $posts->count() }} of {{ $posts->total() }} articles
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <!-- Filter & Search Summary Bar -->
+        <div id="posts" class="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
+            <!-- Category Filter Pills -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-none">
+                <a
+                    href="{{ route('home') }}"
+                    class="px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all {{ empty($selectedCategorySlug) && empty($search) ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}"
+                >
+                    All Articles
+                </a>
+                @foreach ($categories as $cat)
+                    <a
+                        href="{{ route('blog.category', $cat->slug) }}"
+                        class="px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all {{ $selectedCategorySlug === $cat->slug ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}"
+                    >
+                        {{ $cat->name }} <span class="opacity-60 ml-0.5">({{ $cat->published_posts_count }})</span>
+                    </a>
+                @endforeach
             </div>
+
+            <!-- Active Search Badge -->
+            @if (!empty($search))
+                <div class="flex items-center gap-2 text-sm text-slate-600">
+                    <span>Search results for: <strong class="text-slate-900 font-semibold">"{{ $search }}"</strong></span>
+                    <a href="{{ route('home') }}" class="text-xs text-emerald-600 hover:text-emerald-700 font-medium underline">Clear</a>
+                </div>
+            @endif
         </div>
 
-        @if ($posts->isEmpty())
-            <div class="p-12 text-center rounded-3xl bg-slate-900/40 border border-slate-800 space-y-4">
-                <div class="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center mx-auto text-slate-500">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-                <h3 class="text-lg font-bold text-white">No articles found</h3>
-                <p class="text-xs text-slate-400 max-w-sm mx-auto">
-                    No articles match your search or filter criteria. Try browsing all categories or perform a migration from WordPress.
-                </p>
-                <a href="{{ route('home') }}" class="inline-block px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-xs font-semibold text-white transition">
-                    View All Articles
-                </a>
-            </div>
-        @else
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+        <!-- Articles Grid -->
+        @if ($posts->count() > 0)
+            <div class="masonry-grid">
                 @foreach ($posts as $post)
-                    <article class="flex flex-col rounded-3xl bg-slate-900/40 border border-slate-800/80 overflow-hidden hover:border-slate-700 hover:bg-slate-900/70 transition duration-200 group">
-                        @if ($post->featured_image)
-                            <a href="{{ route('blog.show', $post->slug) }}" class="aspect-[16/10] overflow-hidden bg-slate-800">
-                                <img src="{{ $post->featured_image }}" alt="{{ $post->title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
-                            </a>
-                        @endif
+                    <article class="group glass-card overflow-hidden rounded-3xl flex flex-col hover-lift-enhanced transition-all duration-300">
+                        <!-- Image with Category Pill Overlay -->
+                        <div class="relative h-52 w-full overflow-hidden bg-slate-100">
+                            @if ($post->featured_image)
+                                <img
+                                    src="{{ $post->featured_image }}"
+                                    alt="{{ $post->title }}"
+                                    class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                    @if ($loop->first)
+                                        loading="eager"
+                                        fetchpriority="high"
+                                        decoding="async"
+                                    @else
+                                        loading="lazy"
+                                        decoding="async"
+                                    @endif
+                                />
+                            @else
+                                <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-100/70 via-slate-100 to-teal-100/70 text-xs font-bold uppercase tracking-wider text-emerald-700">
+                                    {{ $post->categories->first()->name ?? 'Engineering' }}
+                                </div>
+                            @endif
 
-                        <div class="p-6 flex-1 flex flex-col justify-between space-y-4">
-                            <div class="space-y-3">
-                                <!-- Category & Reading Time -->
-                                <div class="flex items-center justify-between text-xs">
-                                    <div class="flex flex-wrap gap-1.5">
-                                        @foreach ($post->categories->take(2) as $cat)
-                                            <a href="{{ route('blog.category', $cat->slug) }}" class="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition">
-                                                {{ $cat->name }}
-                                            </a>
-                                        @endforeach
-                                    </div>
-                                    <span class="text-slate-400 font-mono text-[11px]">{{ $post->reading_time }} min read</span>
+                            @if ($post->categories->first())
+                                <div class="absolute top-4 left-4">
+                                    <span class="rounded-full bg-white/90 backdrop-blur-md px-3 py-1 text-xs font-semibold text-emerald-700 shadow-xs border border-white/60">
+                                        {{ $post->categories->first()->name }}
+                                    </span>
+                                </div>
+                            @endif
+                        </div>
+
+                        <!-- Post Card Body -->
+                        <div class="flex flex-1 flex-col justify-between p-6">
+                            <div>
+                                <!-- Metadata (Date & Comments) -->
+                                <div class="flex items-center gap-4 text-xs font-medium text-slate-500 mb-3">
+                                    <span class="inline-flex items-center gap-1.5">
+                                        <svg class="h-4 w-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        {{ $post->published_at ? $post->published_at->format('M d, Y') : $post->created_at->format('M d, Y') }}
+                                    </span>
+
+                                    @if ($post->comments_count !== null || $post->comments()->count() > 0)
+                                        <span class="inline-flex items-center gap-1.5">
+                                            <svg class="h-4 w-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                            </svg>
+                                            {{ $post->comments_count ?? $post->comments()->count() }}
+                                        </span>
+                                    @endif
                                 </div>
 
-                                <!-- Post Title -->
-                                <h3 class="font-bold text-lg text-white group-hover:text-red-400 transition leading-snug line-clamp-2">
-                                    <a href="{{ route('blog.show', $post->slug) }}">
+                                <!-- Article Title -->
+                                <a href="{{ route('blog.show', $post->slug) }}" class="block group/title">
+                                    <h2 class="text-xl font-bold leading-snug text-slate-900 transition-colors group-hover/title:text-emerald-600 line-clamp-2">
                                         {{ $post->title }}
-                                    </a>
-                                </h3>
+                                    </h2>
+                                </a>
 
-                                <!-- Post Excerpt -->
-                                <p class="text-xs text-slate-400 leading-relaxed line-clamp-3">
+                                <!-- Article Excerpt -->
+                                <p class="mt-3 text-sm text-slate-600 leading-relaxed line-clamp-3">
                                     {{ $post->excerpt }}
                                 </p>
                             </div>
 
-                            <!-- Footer Meta -->
-                            <div class="pt-4 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-400">
-                                <div class="flex items-center gap-2">
-                                    <span class="font-medium text-slate-300">{{ $post->user->name ?? 'Admin' }}</span>
-                                    <span>&bull;</span>
-                                    <span class="font-mono text-[11px]">
-                                        {{ $post->published_at ? $post->published_at->format('M d, Y') : 'Draft' }}
-                                    </span>
-                                </div>
-                                <a href="{{ route('blog.show', $post->slug) }}" class="text-red-400 hover:text-red-300 font-semibold group-hover:translate-x-0.5 transition">
-                                    &rarr;
+                            <!-- Read More CTA -->
+                            <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                                <a
+                                    href="{{ route('blog.show', $post->slug) }}"
+                                    class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3.5 py-1.5 rounded-full transition-all hover:bg-emerald-100 hover:text-emerald-800"
+                                >
+                                    <span>Read More</span>
+                                    <svg class="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                    </svg>
                                 </a>
+
+                                <span class="text-xs text-slate-400 font-medium">
+                                    {{ ceil(str_word_count(strip_tags($post->content)) / 200) }} min read
+                                </span>
                             </div>
                         </div>
                     </article>
@@ -199,29 +243,25 @@
             </div>
 
             <!-- Pagination -->
-            <div class="pt-8">
+            <div class="mt-12">
                 {{ $posts->links() }}
+            </div>
+        @else
+            <!-- Empty State -->
+            <div class="glass-card rounded-3xl p-12 text-center my-8">
+                <div class="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4 border border-emerald-100">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">No posts found</h3>
+                <p class="text-sm text-slate-500 max-w-md mx-auto mb-6">
+                    We couldn't find any articles matching your query. Try searching for something else or explore all articles.
+                </p>
+                <a href="{{ route('home') }}" class="px-6 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-full hover:bg-emerald-700 transition">
+                    View All Articles
+                </a>
             </div>
         @endif
     </div>
-
-    <!-- Tags Cloud Section -->
-    @if ($popularTags->isNotEmpty())
-        <div class="p-8 rounded-3xl bg-slate-900/30 border border-slate-800/80 space-y-4">
-            <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-                <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                </svg>
-                <span>Popular Topics & Tags</span>
-            </h3>
-            <div class="flex flex-wrap gap-2">
-                @foreach ($popularTags as $tag)
-                    <a href="{{ route('blog.tag', $tag->slug) }}" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-red-500/10 hover:text-red-400 text-slate-300 border border-slate-800 text-xs font-mono transition">
-                        #{{ $tag->name }} ({{ $tag->published_posts_count }})
-                    </a>
-                @endforeach
-            </div>
-        </div>
-    @endif
-</div>
 @endsection

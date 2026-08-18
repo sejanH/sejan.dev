@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\ContactMessage;
 use App\Models\Post;
 use App\Models\Tag;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class BlogController extends Controller
@@ -32,18 +34,6 @@ class BlogController extends Controller
             });
         }
 
-        // Grab a featured post for the hero section if not searching/filtering
-        $featuredPost = null;
-        if (empty($search) && empty($selectedCategorySlug)) {
-            $featuredPost = (clone $query)->where('is_featured', true)->first()
-                ?? (clone $query)->first();
-        }
-
-        // Paginate remaining posts
-        if ($featuredPost) {
-            $query->where('id', '!=', $featuredPost->id);
-        }
-
         $posts = $query->paginate(9)->withQueryString();
 
         $categories = Category::withCount('publishedPosts')
@@ -57,7 +47,6 @@ class BlogController extends Controller
             ->get();
 
         return view('blog.index', [
-            'featuredPost' => $featuredPost,
             'posts' => $posts,
             'categories' => $categories,
             'popularTags' => $popularTags,
@@ -86,12 +75,28 @@ class BlogController extends Controller
                 $q->whereIn('categories.id', $categoryIds);
             })
             ->latest('published_at')
-            ->take(3)
+            ->take(7)
             ->get();
 
+        // Fetch hierarchical categories with published post counts — cached 1 hour
+        $sidebarCategories = Cache::remember('sidebar_categories', 3600, function () {
+            return Category::with(['children' => function ($q) {
+                    $q->withCount(['posts' => function ($q) {
+                        $q->published();
+                    }])->orderBy('name');
+                }])
+                ->whereNull('parent_id')
+                ->withCount(['posts' => function ($q) {
+                    $q->published();
+                }])
+                ->orderBy('name')
+                ->get();
+        });
+
         return view('blog.show', [
-            'post' => $post,
-            'relatedPosts' => $relatedPosts,
+            'post'               => $post,
+            'relatedPosts'       => $relatedPosts,
+            'sidebarCategories'  => $sidebarCategories,
         ]);
     }
 
@@ -141,5 +146,38 @@ class BlogController extends Controller
     public function about(): View
     {
         return view('blog.about');
+    }
+
+    /**
+     * Display the Contact page.
+     */
+    public function contact(): View
+    {
+        return view('blog.contact');
+    }
+
+    /**
+     * Handle public contact form submission.
+     */
+    public function handleContact(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:100',
+            'email' => 'required|email|max:150',
+            'subject' => 'nullable|string|max:200',
+            'message' => 'required|string|max:5000',
+        ]);
+
+        ContactMessage::create([
+            'name' => trim(strip_tags($validated['name'])),
+            'email' => trim(strtolower($validated['email'])),
+            'subject' => !empty($validated['subject']) ? trim(strip_tags($validated['subject'])) : null,
+            'message' => trim(strip_tags($validated['message'])),
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'is_read' => false,
+        ]);
+
+        return back()->with('success', 'Thank you! Your message has been sent successfully.');
     }
 }

@@ -12,8 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->boolean('is_admin')->default(false)->after('password');
-            $table->string('role')->default('admin')->after('is_admin');
+            if (!Schema::hasColumn('users', 'is_admin')) {
+                $table->boolean('is_admin')->default(false)->after('password');
+            }
+            if (!Schema::hasColumn('users', 'role')) {
+                $table->string('role')->default('admin')->after('is_admin');
+            }
         });
     }
 
@@ -23,7 +27,16 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['is_admin', 'role']);
+            $columnsToDrop = [];
+            if (Schema::hasColumn('users', 'is_admin')) {
+                $columnsToDrop[] = 'is_admin';
+            }
+            if (Schema::hasColumn('users', 'role')) {
+                $columnsToDrop[] = 'role';
+            }
+            if (!empty($columnsToDrop)) {
+                $table->dropColumn($columnsToDrop);
+            }
         });
     }
 };

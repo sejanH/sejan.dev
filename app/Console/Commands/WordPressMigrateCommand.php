@@ -3,6 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Models\Category;
+use App\Models\Comment;
+use App\Models\Media;
 use App\Models\Post;
 use App\Models\Redirect;
 use App\Models\Tag;
@@ -16,9 +18,12 @@ class WordPressMigrateCommand extends Command
      */
     protected $signature = 'wp:migrate
                             {--test : Test WordPress database connection only}
-                            {--fresh : Truncate posts, categories, and tags before migration}
+                            {--fresh : Truncate posts, categories, tags, media, and comments before migration}
                             {--taxonomies : Ingest categories and tags only}
-                            {--posts : Ingest posts, pages, and redirects only}';
+                            {--media : Ingest media and copy physical upload files only}
+                            {--posts : Ingest posts, pages, and redirects only}
+                            {--comments : Ingest comments only}
+                            {--uploads= : Path to WordPress wp-content/uploads directory}';
 
     /**
      * The console command description.
@@ -44,11 +49,13 @@ class WordPressMigrateCommand extends Command
         }
 
         if ($this->option('fresh')) {
-            if ($this->confirm('Are you sure you want to truncate existing posts, categories, and tags?', true)) {
+            if ($this->confirm('Are you sure you want to truncate existing posts, categories, tags, media, and comments?', true)) {
                 $this->warn('Truncating tables...');
+                Comment::query()->delete();
                 Post::query()->delete();
                 Category::query()->delete();
                 Tag::query()->delete();
+                Media::query()->delete();
                 Redirect::query()->delete();
                 $this->info('Tables truncated.');
             }
@@ -59,6 +66,7 @@ class WordPressMigrateCommand extends Command
         try {
             $pdo = $migrator->getConnection();
             $prefix = config('wordpress.database.prefix', env('WP_TABLE_PREFIX', 'wp_'));
+            $uploadsDir = $this->option('uploads') ?: config('wordpress.media.uploads_path', env('WP_UPLOADS_PATH', '/var/www/sejan.xyz/wp-content/uploads'));
 
             if ($this->option('taxonomies')) {
                 $this->info('Ingesting categories and tags...');
@@ -66,6 +74,15 @@ class WordPressMigrateCommand extends Command
                 $this->table(['Type', 'Count'], [
                     ['Categories', $stats['categories']],
                     ['Tags', $stats['tags']],
+                ]);
+                return self::SUCCESS;
+            }
+
+            if ($this->option('media')) {
+                $this->info("Ingesting media library and copying files from {$uploadsDir}...");
+                $stats = $migrator->migrateMedia($pdo, $prefix, $uploadsDir);
+                $this->table(['Type', 'Count'], [
+                    ['Media Attachments', $stats['media']],
                 ]);
                 return self::SUCCESS;
             }
@@ -80,15 +97,26 @@ class WordPressMigrateCommand extends Command
                 return self::SUCCESS;
             }
 
+            if ($this->option('comments')) {
+                $this->info('Ingesting comments and building threaded trees...');
+                $stats = $migrator->migrateComments($pdo, $prefix);
+                $this->table(['Type', 'Count'], [
+                    ['Comments', $stats['comments']],
+                ]);
+                return self::SUCCESS;
+            }
+
             $this->info('Executing full migration pipeline...');
-            $stats = $migrator->migrateAll();
+            $stats = $migrator->migrateAll(['uploads_path' => $uploadsDir]);
 
             $this->newLine();
-            $this->info('✨ Migration completed successfully!');
+            $this->info('✨ Full Migration completed successfully!');
             $this->table(['Resource', 'Migrated Count'], [
                 ['Categories', $stats['categories']],
                 ['Tags', $stats['tags']],
+                ['Media Files', $stats['media']],
                 ['Posts & Pages', $stats['posts']],
+                ['Comments', $stats['comments']],
                 ['301 SEO Redirects', $stats['redirects']],
             ]);
 

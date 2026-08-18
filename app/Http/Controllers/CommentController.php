@@ -16,11 +16,6 @@ class CommentController extends Controller
      */
     public function store(Request $request, Post $post): RedirectResponse
     {
-        // Honeypot check for bots
-        if (!empty($request->input('website_hp'))) {
-            return back()->with('status', 'Your comment has been submitted for moderation.');
-        }
-
         $throttleKey = 'comment|' . $request->ip();
         if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
             return back()->with('error', 'Too many comments submitted. Please wait a few minutes before trying again.');
@@ -49,6 +44,8 @@ class CommentController extends Controller
             'user_agent' => $request->userAgent(),
         ]);
 
-        return back()->with('status', 'Thank you! Your comment has been submitted and is awaiting manual administrator approval.');
+        return back()
+            ->with('status', 'Thank you! Your comment has been submitted and is awaiting manual administrator approval.')
+            ->with('success', 'Thank you! Your comment has been submitted and is awaiting manual administrator approval.');
     }
 }

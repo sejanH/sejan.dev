@@ -1,17 +1,17 @@
 <!-- Reusable WordPress-Style Media Picker Modal -->
-<div id="mediaPickerModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+<div id="mediaPickerModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs hidden flex items-center justify-center p-4 text-slate-900">
+    <div class="bg-white border border-slate-200 rounded-3xl max-w-4xl w-full h-[85vh] flex flex-col shadow-2xl overflow-hidden">
         <!-- Header -->
-        <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+        <div class="p-5 border-b border-slate-200 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-xl bg-red-500/10 text-red-400 flex items-center justify-center border border-red-500/20">
+                <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                 </div>
                 <div>
-                    <h3 class="text-sm font-bold text-white">Media Library Picker</h3>
-                    <p class="text-[11px] text-slate-400">Select an asset from your library or upload new files</p>
+                    <h3 class="text-sm font-bold text-slate-900">Media Library Picker</h3>
+                    <p class="text-[11px] text-slate-500">Select an asset from your library or upload new files</p>
                 </div>
             </div>
 
@@ -21,7 +21,7 @@
                     type="button"
                     onclick="switchMediaTab('library')"
                     id="tabBtnLibrary"
-                    class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-red-600 text-white transition"
+                    class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 text-white transition shadow-2xs"
                 >
                     Library
                 </button>
@@ -29,12 +29,12 @@
                     type="button"
                     onclick="switchMediaTab('upload')"
                     id="tabBtnUpload"
-                    class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-400 hover:text-white transition"
+                    class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:text-slate-900 transition"
                 >
                     Upload Files
                 </button>
 
-                <button type="button" onclick="closeMediaPicker()" class="ml-2 text-slate-400 hover:text-white p-1">
+                <button type="button" onclick="closeMediaPicker()" class="ml-2 text-slate-400 hover:text-slate-700 p-1">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -53,10 +53,10 @@
                         id="mediaPickerSearch"
                         oninput="debounceSearchMedia()"
                         placeholder="Search media files..."
-                        class="w-full max-w-xs px-3.5 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-red-500"
+                        class="w-full max-w-xs px-3.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
                     />
-                    <div id="mediaLoadingSpinner" class="text-xs text-slate-400 font-mono hidden flex items-center gap-1.5">
-                        <svg class="animate-spin w-3.5 h-3.5 text-red-500" fill="none" viewBox="0 0 24 24">
+                    <div id="mediaLoadingSpinner" class="text-xs text-slate-500 font-mono hidden flex items-center gap-1.5">
+                        <svg class="animate-spin w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                         </svg>
@@ -75,24 +75,24 @@
                 <div
                     ondrop="handleModalDrop(event)"
                     ondragover="event.preventDefault();"
-                    class="w-full max-w-md p-10 rounded-3xl border-2 border-dashed border-slate-700 bg-slate-950/60 flex flex-col items-center justify-center space-y-3 cursor-pointer"
+                    class="w-full max-w-md p-10 rounded-3xl border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center space-y-3 cursor-pointer hover:border-emerald-500 transition"
                     onclick="document.getElementById('modalFileInput').click();"
                 >
-                    <div class="w-14 h-14 rounded-2xl bg-red-500/10 text-red-400 flex items-center justify-center border border-red-500/20">
+                    <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
                         <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                         </svg>
                     </div>
-                    <div class="font-bold text-white text-sm">Select files to upload</div>
-                    <p class="text-xs text-slate-400">or drag and drop files directly here</p>
+                    <div class="font-bold text-slate-900 text-sm">Select files to upload</div>
+                    <p class="text-xs text-slate-500">or drag and drop files directly here</p>
                     <input type="file" id="modalFileInput" multiple accept="image/*" class="hidden" onchange="uploadModalFiles(this.files)" />
                 </div>
             </div>
         </div>
 
         <!-- Footer -->
-        <div class="p-4 border-t border-slate-800 bg-slate-950 flex items-center justify-between">
-            <div id="mediaPickerSelectionInfo" class="text-xs text-slate-400 truncate max-w-md">
+        <div class="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+            <div id="mediaPickerSelectionInfo" class="text-xs text-slate-500 truncate max-w-md">
                 No asset selected
             </div>
 
@@ -100,18 +100,18 @@
                 <button
                     type="button"
                     onclick="closeMediaPicker()"
-                    class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition"
+                    class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
                 >
                     Cancel
                 </button>
                 <button
                     type="button"
-                    id="mediaPickerConfirmBtn"
-                    onclick="confirmMediaSelection()"
+                    id="btnConfirmMediaSelect"
                     disabled
-                    class="px-5 py-2 bg-red-600 disabled:opacity-40 disabled:pointer-events-none hover:bg-red-500 text-white font-semibold rounded-xl text-xs shadow-lg shadow-red-600/30 transition"
+                    onclick="confirmMediaSelection()"
+                    class="px-5 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white shadow-xs transition"
                 >
-                    Use Selected Asset
+                    Select Asset
                 </button>
             </div>
         </div>
@@ -119,96 +119,117 @@
 </div>
 
 <script>
-    let currentPickerTarget = null; // 'featured_image' or 'editor'
+    let currentPickerTarget = null;
     let selectedMediaItem = null;
     let mediaSearchTimeout = null;
 
-    function openMediaPicker(target = 'featured_image') {
+    function openMediaPicker(target) {
         currentPickerTarget = target;
         selectedMediaItem = null;
-        document.getElementById('mediaPickerConfirmBtn').disabled = true;
-        document.getElementById('mediaPickerSelectionInfo').innerText = 'No asset selected';
-        document.getElementById('mediaPickerModal').classList.remove('hidden');
+        updateSelectionUi();
         switchMediaTab('library');
-        fetchMediaAssets();
+        loadMediaLibrary();
+        document.getElementById('mediaPickerModal').classList.remove('hidden');
     }
 
     function closeMediaPicker() {
         document.getElementById('mediaPickerModal').classList.add('hidden');
+        currentPickerTarget = null;
+        selectedMediaItem = null;
     }
 
     function switchMediaTab(tab) {
         const tabLib = document.getElementById('mediaTabLibrary');
-        const tabUp = document.getElementById('mediaTabUpload');
+        const tabUpload = document.getElementById('mediaTabUpload');
         const btnLib = document.getElementById('tabBtnLibrary');
-        const btnUp = document.getElementById('tabBtnUpload');
+        const btnUpload = document.getElementById('tabBtnUpload');
 
         if (tab === 'library') {
             tabLib.classList.remove('hidden');
-            tabUp.classList.add('hidden');
-            btnLib.className = "px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-red-600 text-white transition";
-            btnUp.className = "px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-400 hover:text-white transition";
+            tabUpload.classList.add('hidden');
+            btnLib.className = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 text-white transition shadow-2xs';
+            btnUpload.className = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:text-slate-900 transition';
         } else {
             tabLib.classList.add('hidden');
-            tabUp.classList.remove('hidden');
-            btnUp.className = "px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-red-600 text-white transition";
-            btnLib.className = "px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-400 hover:text-white transition";
+            tabUpload.classList.remove('hidden');
+            btnLib.className = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:text-slate-900 transition';
+            btnUpload.className = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 text-white transition shadow-2xs';
         }
     }
 
     function debounceSearchMedia() {
         clearTimeout(mediaSearchTimeout);
         mediaSearchTimeout = setTimeout(() => {
-            fetchMediaAssets();
+            const q = document.getElementById('mediaPickerSearch').value;
+            loadMediaLibrary(q);
         }, 300);
     }
 
-    async function fetchMediaAssets() {
-        const query = document.getElementById('mediaPickerSearch').value;
+    async function loadMediaLibrary(query = '') {
         const spinner = document.getElementById('mediaLoadingSpinner');
         const grid = document.getElementById('mediaPickerGrid');
-
         spinner.classList.remove('hidden');
 
         try {
-            const res = await fetch(`/admin/media?json=1&type=images&q=${encodeURIComponent(query)}`);
+            const url = new URL('/admin/media/picker-list', window.location.origin);
+            if (query) url.searchParams.set('q', query);
+
+            const res = await fetch(url.toString(), {
+                headers: { 'Accept': 'application/json' }
+            });
             const data = await res.json();
 
             grid.innerHTML = '';
-
-            if (!data.data || data.data.length === 0) {
-                grid.innerHTML = '<div class="col-span-full py-8 text-center text-xs text-slate-500">No media assets found. Upload one!</div>';
+            if (data.data.length === 0) {
+                grid.innerHTML = '<div class="col-span-full py-8 text-center text-slate-400 text-xs">No media files found</div>';
                 return;
             }
 
             data.data.forEach(item => {
                 const el = document.createElement('div');
-                el.className = "group relative aspect-square rounded-xl overflow-hidden bg-slate-950 border border-slate-800 hover:border-red-500 cursor-pointer transition";
-                el.innerHTML = `
-                    <img src="${item.url}" alt="${item.alt_text || item.original_name}" class="w-full h-full object-cover" />
-                    <div class="absolute inset-0 bg-red-600/20 opacity-0 transition selection-overlay"></div>
-                `;
-                el.onclick = () => selectMediaGridItem(item, el);
+                el.className = `group relative rounded-xl overflow-hidden aspect-square bg-slate-100 border ${selectedMediaItem?.id === item.id ? 'border-emerald-500 ring-2 ring-emerald-500' : 'border-slate-200'} hover:border-emerald-400 cursor-pointer transition`;
+                el.onclick = () => selectMediaItem(item, el);
+
+                if (item.is_image) {
+                    el.innerHTML = `<img src="${item.url}" alt="${item.alt_text || ''}" class="w-full h-full object-cover" />`;
+                } else {
+                    el.innerHTML = `<div class="w-full h-full flex flex-col items-center justify-center p-2 text-center text-slate-500 font-mono text-[10px]"><span class="truncate w-full">${item.original_name}</span></div>`;
+                }
+
                 grid.appendChild(el);
             });
         } catch (err) {
-            console.error('Error loading media:', err);
+            console.error('Failed to load media list', err);
         } finally {
             spinner.classList.add('hidden');
         }
     }
 
-    function selectMediaGridItem(item, element) {
+    function selectMediaItem(item, element) {
         selectedMediaItem = item;
-        document.querySelectorAll('#mediaPickerGrid > div').forEach(el => {
-            el.classList.remove('ring-2', 'ring-red-500', 'border-red-500');
-        });
-        element.classList.add('ring-2', 'ring-red-500', 'border-red-500');
 
-        document.getElementById('mediaPickerSelectionInfo').innerHTML = `
-            Selected: <span class="font-bold text-white">${item.original_name}</span> (${item.formatted_size})
-        `;
-        document.getElementById('mediaPickerConfirmBtn').disabled = false;
+        document.querySelectorAll('#mediaPickerGrid > div').forEach(div => {
+            div.classList.remove('border-emerald-500', 'ring-2', 'ring-emerald-500');
+            div.classList.add('border-slate-200');
+        });
+
+        element.classList.remove('border-slate-200');
+        element.classList.add('border-emerald-500', 'ring-2', 'ring-emerald-500');
+
+        updateSelectionUi();
+    }
+
+    function updateSelectionUi() {
+        const info = document.getElementById('mediaPickerSelectionInfo');
+        const btn = document.getElementById('btnConfirmMediaSelect');
+
+        if (selectedMediaItem) {
+            info.innerHTML = `<span class="font-bold text-slate-900">${selectedMediaItem.original_name}</span> &bull; <span class="font-mono text-slate-500">${selectedMediaItem.formatted_size}</span>`;
+            btn.disabled = false;
+        } else {
+            info.innerText = 'No asset selected';
+            btn.disabled = true;
+        }
     }
 
     function confirmMediaSelection() {
@@ -221,20 +242,36 @@
                 updateFeaturedPreview(selectedMediaItem.url);
             }
         } else if (currentPickerTarget === 'editor') {
-            // Insert image into active text editor
-            insertImageIntoEditor(selectedMediaItem);
+            if (window.editorInstance) {
+                window.editorInstance.model.change(writer => {
+                    const imageElement = writer.createElement('imageBlock', {
+                        src: selectedMediaItem.url,
+                        alt: selectedMediaItem.alt_text || selectedMediaItem.original_name
+                    });
+                    window.editorInstance.model.insertContent(imageElement, window.editorInstance.model.document.selection);
+                });
+            }
         }
 
         closeMediaPicker();
     }
 
     function updateFeaturedPreview(url) {
-        const preview = document.getElementById('featuredImagePreview');
+        const container = document.getElementById('featuredImagePreview');
         const img = document.getElementById('featuredImagePreviewImg');
-        if (preview && img && url) {
+        if (!container || !img) return;
+
+        if (url && url.trim().length > 0) {
             img.src = url;
-            preview.classList.remove('hidden');
+            container.classList.remove('hidden');
+        } else {
+            container.classList.add('hidden');
         }
+    }
+
+    function handleModalDrop(e) {
+        e.preventDefault();
+        uploadModalFiles(e.dataTransfer.files);
     }
 
     async function uploadModalFiles(files) {
@@ -245,32 +282,27 @@
             formData.append('files[]', files[i]);
         }
 
-        const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
         try {
             const res = await fetch('/admin/media', {
                 method: 'POST',
                 headers: {
-                    'X-CSRF-TOKEN': csrf,
+                    'X-CSRF-TOKEN': csrfToken,
                     'Accept': 'application/json'
                 },
                 body: formData
             });
 
-            const data = await res.json();
-            if (data.success) {
+            if (res.ok) {
                 switchMediaTab('library');
-                fetchMediaAssets();
+                loadMediaLibrary();
             } else {
-                alert(data.error || 'Upload failed');
+                alert('File upload failed. Check format and size limits.');
             }
         } catch (err) {
-            alert('Upload error: ' + err.message);
+            console.error(err);
+            alert('Upload request failed.');
         }
-    }
-
-    function handleModalDrop(e) {
-        e.preventDefault();
-        uploadModalFiles(e.dataTransfer.files);
     }
 </script>

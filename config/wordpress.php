@@ -41,9 +41,10 @@ return [
     |--------------------------------------------------------------------------
     */
     'media' => [
+        'uploads_path'        => env('WP_UPLOADS_PATH', '/var/www/sejan.xyz/wp-content/uploads'),
         'download'            => env('WP_DOWNLOAD_MEDIA', true),
         'disk'                => env('WP_MEDIA_DISK', 'public'),
-        'path'                => env('WP_MEDIA_DIRECTORY', 'blog/uploads'),
+        'path'                => env('WP_MEDIA_DIRECTORY', 'media'),
         'replace_inline_urls' => env('WP_MEDIA_REPLACE_INLINE_URLS', true),
     ],
 

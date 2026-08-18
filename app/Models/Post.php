@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class Post extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'user_id',
@@ -59,6 +60,20 @@ class Post extends Model
             if (empty($post->excerpt) && !empty($post->content)) {
                 $post->excerpt = Str::limit(strip_tags($post->content), 180);
             }
+        });
+
+        static::saved(function () {
+            \Illuminate\Support\Facades\Cache::forget('seo_sitemap_xml');
+            \Illuminate\Support\Facades\Cache::forget('seo_rss_feed_xml');
+            \Illuminate\Support\Facades\Cache::forget('seo_atom_feed_xml');
+            \Illuminate\Support\Facades\Cache::forget('admin_dashboard_analytics');
+        });
+
+        static::deleted(function () {
+            \Illuminate\Support\Facades\Cache::forget('seo_sitemap_xml');
+            \Illuminate\Support\Facades\Cache::forget('seo_rss_feed_xml');
+            \Illuminate\Support\Facades\Cache::forget('seo_atom_feed_xml');
+            \Illuminate\Support\Facades\Cache::forget('admin_dashboard_analytics');
         });
     }
 

@@ -8,12 +8,12 @@ use App\Models\Redirect;
 use App\Models\Tag;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class BlogAndMigrationTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     protected function setUp(): void
     {
@@ -26,7 +26,7 @@ class BlogAndMigrationTest extends TestCase
         $response = $this->get('/');
 
         $response->assertStatus(200);
-        $response->assertSee('sejan');
+        $response->assertSee('Sejan');
         $response->assertSee('Migrating from WordPress to Laravel 12');
     }
 
@@ -83,7 +83,9 @@ class BlogAndMigrationTest extends TestCase
             'tags_input' => 'php, test',
         ]);
 
-        $response->assertRedirect('/admin/posts');
+        $post = Post::where('slug', 'new-test-article-laravel-12')->first();
+        $this->assertNotNull($post);
+        $response->assertRedirect(route('admin.posts.edit', $post));
         $this->assertDatabaseHas('posts', [
             'slug' => 'new-test-article-laravel-12',
             'status' => 'published',
