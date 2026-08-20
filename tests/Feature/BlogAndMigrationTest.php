@@ -104,4 +104,30 @@ class BlogAndMigrationTest extends TestCase
         ]);
         $postResponse->assertStatus(403);
     }
+
+    public function test_admin_can_update_existing_article(): void
+    {
+        $admin = User::where('is_admin', true)->first();
+        $post = Post::first();
+
+        $response = $this->actingAs($admin)->put('/admin/posts/' . $post->id, [
+            'title' => 'Updated Title for Architecture Post',
+            'slug' => $post->slug,
+            'excerpt' => 'Updated excerpt text.',
+            'content' => '<h2>Updated Content</h2><p>Updated content body.</p>',
+            'status' => 'published',
+            'published_at' => '2026-08-20T12:00',
+            'featured_image' => 'https://blog.sejan.dev/storage/media/2026/08/sample.jpg',
+            'is_featured' => 1,
+            'tags_input' => 'laravel, testing',
+        ]);
+
+        $response->assertStatus(302);
+        $response->assertRedirect(route('admin.posts.edit', $post));
+        $this->assertDatabaseHas('posts', [
+            'id' => $post->id,
+            'title' => 'Updated Title for Architecture Post',
+            'featured_image' => 'https://blog.sejan.dev/storage/media/2026/08/sample.jpg',
+        ]);
+    }
 }

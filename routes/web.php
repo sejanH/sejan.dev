@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\CommentController as AdminCommentController;
 use App\Http\Controllers\Admin\ContactMessageController as AdminMessageController;
 use App\Http\Controllers\Admin\MediaController as AdminMediaController;
 use App\Http\Controllers\Admin\PostController as AdminPostController;
 use App\Http\Controllers\Admin\RedirectController as AdminRedirectController;
+use App\Http\Controllers\Admin\TagController as AdminTagController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\WordPressMigrationController;
 use App\Http\Controllers\AuthController;
@@ -72,8 +74,13 @@ Route::middleware('auth')->group(function () {
         Route::delete('/posts/{id}/force-delete', [AdminPostController::class, 'forceDelete'])->name('admin.posts.forceDelete');
         Route::resource('posts', AdminPostController::class, ['as' => 'admin']);
 
+        // Taxonomies Management (/admin/categories & /admin/tags)
+        Route::resource('categories', AdminCategoryController::class, ['as' => 'admin'])->except(['show', 'create']);
+        Route::resource('tags', AdminTagController::class, ['as' => 'admin'])->except(['show', 'create']);
+
         // Media Library (/admin/media)
         Route::get('/media', [AdminMediaController::class, 'index'])->name('admin.media.index');
+        Route::get('/media/picker-list', [AdminMediaController::class, 'index'])->name('admin.media.picker-list');
         Route::post('/media', [AdminMediaController::class, 'store'])->name('admin.media.store');
         Route::put('/media/{medium}', [AdminMediaController::class, 'update'])->name('admin.media.update');
         Route::delete('/media/{medium}', [AdminMediaController::class, 'destroy'])->name('admin.media.destroy');

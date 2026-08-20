@@ -37,9 +37,28 @@ class Media extends Model
 
     protected $appends = [
         'url',
+        'thumbnail_url',
         'formatted_size',
         'is_image',
+        'created_at_human',
+        'created_at_formatted',
     ];
+
+    /**
+     * Booted model hooks.
+     */
+    protected static function booted(): void
+    {
+        static::saved(function (Media $media) {
+            if ($media->is_image && $media->mime_type !== 'image/svg+xml') {
+                try {
+                    app(\App\Services\Image\ThumbnailService::class)->generateMediaThumbnail($media);
+                } catch (\Throwable $e) {
+                    // Suppress or log silently without failing parent transaction
+                }
+            }
+        });
+    }
 
     /**
      * User / Author relationship.
@@ -62,11 +81,19 @@ class Media extends Model
     }
 
     /**
+     * Get 300x300 thumbnail URL for the media asset.
+     */
+    public function getThumbnailUrlAttribute(): string
+    {
+        return app(\App\Services\Image\ThumbnailService::class)->getMediaThumbnailUrl($this);
+    }
+
+    /**
      * Human-readable file size accessor.
      */
     public function getFormattedSizeAttribute(): string
     {
-        $bytes = $this->size;
+        $bytes = (int) $this->size;
         if ($bytes >= 1048576) {
             return number_format($bytes / 1048576, 1) . ' MB';
         } elseif ($bytes >= 1024) {
@@ -85,11 +112,35 @@ class Media extends Model
     }
 
     /**
+     * Get human-friendly relative created at time.
+     */
+    public function getCreatedAtHumanAttribute(): string
+    {
+        return $this->created_at ? $this->created_at->diffForHumans() : '';
+    }
+
+    /**
+     * Get formatted created at date.
+     */
+    public function getCreatedAtFormattedAttribute(): string
+    {
+        return $this->created_at ? $this->created_at->format('M d, Y h:i A') : '';
+    }
+
+    /**
      * Scope for filtering images only.
      */
     public function scopeImages(Builder $query): Builder
     {
         return $query->where('mime_type', 'like', 'image/%');
+    }
+
+    /**
+     * Scope for filtering non-image documents.
+     */
+    public function scopeDocuments(Builder $query): Builder
+    {
+        return $query->where('mime_type', 'not like', 'image/%');
     }
 
     /**

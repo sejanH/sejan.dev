@@ -304,14 +304,29 @@
                                     </svg>
                                     <span>Featured Cover</span>
                                 </label>
-                                <button
-                                    type="button"
-                                    onclick="openMediaPicker('featured_image')"
-                                    class="text-xs text-emerald-700 hover:text-emerald-900 font-semibold flex items-center gap-1"
-                                >
-                                    Browse Library
-                                </button>
+                                <div class="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onclick="document.getElementById('directFeaturedFileInput').click()"
+                                        class="text-xs text-slate-600 hover:text-emerald-700 font-semibold flex items-center gap-1 transition cursor-pointer"
+                                    >
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                        </svg>
+                                        <span>Upload File</span>
+                                    </button>
+                                    <span class="text-slate-300">|</span>
+                                    <button
+                                        type="button"
+                                        onclick="openMediaPicker('featured_image')"
+                                        class="text-xs text-emerald-700 hover:text-emerald-900 font-semibold flex items-center gap-1 transition"
+                                    >
+                                        Browse Library
+                                    </button>
+                                </div>
                             </div>
+
+                            <input type="file" id="directFeaturedFileInput" accept="image/*" class="hidden" onchange="handleDirectFeaturedUpload(this.files)" />
 
                             <div class="flex gap-2">
                                 <input
@@ -319,7 +334,7 @@
                                     name="featured_image"
                                     id="featured_image"
                                     value="{{ old('featured_image', $post->featured_image) }}"
-                                    placeholder="Image URL..."
+                                    placeholder="Image URL or upload file..."
                                     oninput="updateFeaturedPreview(this.value)"
                                     class="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-mono focus:outline-none focus:border-emerald-500"
                                 />

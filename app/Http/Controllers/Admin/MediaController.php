@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Intervention\Image\Laravel\Facades\Image;
 
 class MediaController extends Controller
 {
@@ -20,35 +21,72 @@ class MediaController extends Controller
     {
         $search = $request->query('q');
         $type = $request->query('type');
+        $sort = $request->query('sort', 'latest');
+        
+        $defaultPerPage = ($request->wantsJson() || $request->has('json') || $request->ajax() || $request->is('admin/media/picker-list')) ? 48 : 24;
+        $perPage = (int) $request->query('per_page', $defaultPerPage);
+        if ($perPage <= 0 || $perPage > 250) {
+            $perPage = $defaultPerPage;
+        }
 
-        $query = Media::latest('created_at');
+        $query = Media::query();
 
+        // Filter by Type
+        if ($type === 'image' || $type === 'images') {
+            $query->images();
+        } elseif ($type === 'document' || $type === 'documents') {
+            $query->documents();
+        }
+
+        // Filter by Search Term
         if (!empty($search)) {
             $query->search($search);
         }
 
-        if ($type === 'image' || $type === 'images') {
-            $query->images();
-        }
+        // Sort Order (Default: Latest First)
+        match ($sort) {
+            'oldest' => $query->orderBy('created_at', 'asc')->orderBy('id', 'asc'),
+            'name_asc', 'name' => $query->orderBy('original_name', 'asc'),
+            'name_desc' => $query->orderBy('original_name', 'desc'),
+            'size_desc', 'size' => $query->orderByDesc('size'),
+            'size_asc' => $query->orderBy('size', 'asc'),
+            default => $query->orderByDesc('created_at')->orderByDesc('id'),
+        };
 
-        $media = $query->paginate(24)->withQueryString();
+        $media = $query->paginate($perPage)->withQueryString();
 
-        if ($request->wantsJson() || $request->has('json')) {
+        if ($request->wantsJson() || $request->has('json') || $request->ajax() || $request->is('admin/media/picker-list')) {
             return response()->json([
                 'data' => $media->items(),
                 'current_page' => $media->currentPage(),
                 'last_page' => $media->lastPage(),
                 'total' => $media->total(),
+                'per_page' => $media->perPage(),
                 'next_page_url' => $media->nextPageUrl(),
+                'prev_page_url' => $media->previousPageUrl(),
             ]);
+        }
+
+        $totalBytes = (int) Media::sum('size');
+        if ($totalBytes >= 1073741824) {
+            $totalSizeFormatted = number_format($totalBytes / 1073741824, 2) . ' GB';
+        } elseif ($totalBytes >= 1048576) {
+            $totalSizeFormatted = number_format($totalBytes / 1048576, 1) . ' MB';
+        } elseif ($totalBytes >= 1024) {
+            $totalSizeFormatted = number_format($totalBytes / 1024, 1) . ' KB';
+        } else {
+            $totalSizeFormatted = $totalBytes . ' B';
         }
 
         return view('admin.media.index', [
             'media' => $media,
             'search' => $search,
             'type' => $type,
+            'sort' => $sort,
             'totalCount' => Media::count(),
-            'totalSize' => Media::sum('size'),
+            'imagesCount' => Media::images()->count(),
+            'documentsCount' => Media::documents()->count(),
+            'totalSizeFormatted' => $totalSizeFormatted,
         ]);
     }
 
@@ -59,8 +97,8 @@ class MediaController extends Controller
     {
         $request->validate([
             'files' => ['nullable', 'array'],
-            'files.*' => ['file', 'max:20480', 'mimes:jpg,jpeg,png,webp,gif,svg,pdf,mp4,zip'],
-            'file' => ['nullable', 'file', 'max:20480', 'mimes:jpg,jpeg,png,webp,gif,svg,pdf,mp4,zip'],
+            'files.*' => ['file', 'max:20480'],
+            'file' => ['nullable', 'file', 'max:20480'],
         ]);
 
         $uploadedFiles = [];
@@ -81,26 +119,65 @@ class MediaController extends Controller
             return back()->with('error', 'No files selected.');
         }
 
+        // Native web image extensions that are directly supported by all browsers
+        $nativeWebImages = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'];
+        $directory = 'media/' . date('Y/m');
+
         foreach ($filesToProcess as $file) {
             $originalName = $file->getClientOriginalName();
-            $extension = $file->getClientOriginalExtension() ?: 'bin';
-            $sanitizedBaseName = Str::slug(pathinfo($originalName, PATHINFO_FILENAME));
-            $filename = $sanitizedBaseName . '-' . time() . '-' . Str::random(6) . '.' . $extension;
-
-            $directory = 'media/' . date('Y/m');
-            $path = $file->storeAs($directory, $filename, 'public');
-
+            $extension = strtolower($file->getClientOriginalExtension() ?: '');
+            $sanitizedBaseName = Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) ?: 'media';
             $mimeType = $file->getClientMimeType() ?: 'application/octet-stream';
             $size = $file->getSize();
 
             $width = null;
             $height = null;
+            $filename = null;
+            $path = null;
 
-            if (str_starts_with($mimeType, 'image/') && $extension !== 'svg') {
-                $imageInfo = @getimagesize($file->getRealPath());
-                if ($imageInfo) {
-                    $width = $imageInfo[0];
-                    $height = $imageInfo[1];
+            $isImage = false;
+            $interventionImg = null;
+
+            // Attempt to load through Intervention Image if not an excluded document type
+            if ($extension !== 'svg' && !in_array($extension, ['pdf', 'mp4', 'zip', 'doc', 'docx', 'txt', 'csv'])) {
+                try {
+                    $interventionImg = Image::read($file->getRealPath());
+                    $isImage = true;
+                    $width = $interventionImg->width();
+                    $height = $interventionImg->height();
+                } catch (\Throwable $e) {
+                    $isImage = false;
+                }
+            } elseif ($extension === 'svg') {
+                $isImage = true;
+                $mimeType = 'image/svg+xml';
+            }
+
+            if ($isImage && !in_array($extension, $nativeWebImages) && $interventionImg) {
+                // Convert unsupported/alternative image formats (BMP, TIFF, AVIF, HEIC, JFIF, TGA, etc.) to JPEG
+                $filename = $sanitizedBaseName . '-' . time() . '-' . Str::random(6) . '.jpg';
+                $path = $directory . '/' . $filename;
+                $encodedJpeg = (string) $interventionImg->toJpeg(90);
+
+                Storage::disk('public')->put($path, $encodedJpeg);
+
+                $mimeType = 'image/jpeg';
+                $size = strlen($encodedJpeg);
+            } else {
+                // Native web image or document file: store directly
+                $finalExt = $extension ?: 'bin';
+                $filename = $sanitizedBaseName . '-' . time() . '-' . Str::random(6) . '.' . $finalExt;
+                $path = $file->storeAs($directory, $filename, 'public');
+
+                if ($isImage && $interventionImg) {
+                    $width = $interventionImg->width();
+                    $height = $interventionImg->height();
+                } elseif (str_starts_with($mimeType, 'image/') && $extension !== 'svg') {
+                    $imageInfo = @getimagesize($file->getRealPath());
+                    if ($imageInfo) {
+                        $width = $imageInfo[0];
+                        $height = $imageInfo[1];
+                    }
                 }
             }
 
@@ -117,6 +194,10 @@ class MediaController extends Controller
                 'alt_text' => str_replace(['-', '_'], ' ', $sanitizedBaseName),
             ]);
 
+            if ($media->is_image && $media->mime_type !== 'image/svg+xml') {
+                app(\App\Services\Image\ThumbnailService::class)->generateMediaThumbnail($media);
+            }
+
             $uploadedFiles[] = $media;
         }
 
@@ -126,6 +207,7 @@ class MediaController extends Controller
                 'message' => count($uploadedFiles) . ' file(s) uploaded successfully.',
                 'files' => $uploadedFiles,
                 'url' => $uploadedFiles[0]->url ?? '',
+                'media' => $uploadedFiles[0] ?? null,
             ]);
         }
 

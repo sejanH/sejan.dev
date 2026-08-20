@@ -4,9 +4,9 @@
 @section('meta_description', 'Engineering insights, software architecture breakdowns, PHP/Laravel patterns, Linux administration, and full-stack development.')
 @section('canonical_url', route('home'))
 
-@if ($posts->isNotEmpty() && $posts->first()->featured_image)
+@if ($posts->isNotEmpty() && $posts->first()->thumbnail_url)
     @section('preload_headers')
-        <link rel="preload" as="image" href="{{ $posts->first()->featured_image }}" fetchpriority="high">
+        <link rel="preload" as="image" href="{{ $posts->first()->thumbnail_url }}" fetchpriority="high">
     @endsection
 @endif
 
@@ -121,33 +121,50 @@
     @endif
 
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <!-- Filter & Search Summary Bar -->
-        <div id="posts" class="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
-            <!-- Category Filter Pills -->
-            <div class="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-none">
-                <a
-                    href="{{ route('home') }}"
-                    class="px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all {{ empty($selectedCategorySlug) && empty($search) ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}"
-                >
-                    All Articles
-                </a>
-                @foreach ($categories as $cat)
-                    <a
-                        href="{{ route('blog.category', $cat->slug) }}"
-                        class="px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all {{ $selectedCategorySlug === $cat->slug ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}"
-                    >
-                        {{ $cat->name }} <span class="opacity-60 ml-0.5">({{ $cat->published_posts_count }})</span>
-                    </a>
-                @endforeach
-            </div>
-
-            <!-- Active Search Badge -->
-            @if (!empty($search))
-                <div class="flex items-center gap-2 text-sm text-slate-600">
+        <!-- Search Results Banner (Active Search) -->
+        @if (!empty($search))
+            <div class="mb-6 px-4 py-3 rounded-2xl bg-emerald-50 border border-emerald-200/80 flex items-center justify-between gap-3 text-xs text-slate-700 shadow-2xs">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
                     <span>Search results for: <strong class="text-slate-900 font-semibold">"{{ $search }}"</strong></span>
-                    <a href="{{ route('home') }}" class="text-xs text-emerald-600 hover:text-emerald-700 font-medium underline">Clear</a>
                 </div>
-            @endif
+                <a href="{{ route('home') }}" class="font-semibold text-emerald-700 hover:text-emerald-900 transition underline">
+                    Clear Search
+                </a>
+            </div>
+        @endif
+
+        <!-- Category Navigation Ribbon -->
+        <div id="posts" class="mb-8">
+            <div class="relative w-full overflow-hidden">
+                <nav
+                    id="categoryScrollTrack"
+                    class="flex items-center gap-2 overflow-x-auto py-2 px-1 scroll-smooth select-none"
+                    style="-webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none;"
+                    aria-label="Category Filter"
+                >
+                    <a
+                        href="{{ route('home') }}#posts"
+                        class="shrink-0 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 {{ empty($selectedCategorySlug) && empty($search) ? 'bg-slate-900 text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-900 hover:bg-slate-50 shadow-2xs' }}"
+                    >
+                        All Articles
+                    </a>
+
+                    @foreach ($categories as $cat)
+                        <a
+                            href="{{ route('blog.category', $cat->slug) }}"
+                            class="category-pill shrink-0 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 flex items-center gap-1.5 {{ $selectedCategorySlug === $cat->slug ? 'bg-emerald-600 text-white shadow-xs active-cat' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-900 hover:bg-slate-50 shadow-2xs' }}"
+                        >
+                            <span>{{ $cat->name }}</span>
+                            <span class="text-[10px] px-1.5 py-0.2 rounded-full font-medium {{ $selectedCategorySlug === $cat->slug ? 'bg-emerald-700/60 text-emerald-100' : 'bg-slate-100 text-slate-500' }}">
+                                {{ $cat->published_posts_count }}
+                            </span>
+                        </a>
+                    @endforeach
+                </nav>
+            </div>
         </div>
 
         <!-- Articles Grid -->
@@ -159,7 +176,7 @@
                         <div class="relative h-52 w-full overflow-hidden bg-slate-100">
                             @if ($post->featured_image)
                                 <img
-                                    src="{{ $post->featured_image }}"
+                                    src="{{ $post->thumbnail_url }}"
                                     alt="{{ $post->title }}"
                                     class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                                     @if ($loop->first)
@@ -265,3 +282,55 @@
         @endif
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const track = document.getElementById('categoryScrollTrack');
+        if (!track) return;
+
+        // Smooth horizontal mouse wheel scroll
+        track.addEventListener('wheel', function(e) {
+            if (e.deltaY !== 0) {
+                e.preventDefault();
+                track.scrollLeft += e.deltaY;
+            }
+        }, { passive: false });
+
+        // Auto-center active category pill
+        const activePill = track.querySelector('.active-cat');
+        if (activePill) {
+            activePill.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
+
+        // Drag to scroll
+        let isDown = false;
+        let startX, scrollLeft;
+
+        track.addEventListener('mousedown', (e) => {
+            isDown = true;
+            track.classList.add('cursor-grabbing');
+            startX = e.pageX - track.offsetLeft;
+            scrollLeft = track.scrollLeft;
+        });
+
+        track.addEventListener('mouseleave', () => {
+            isDown = false;
+            track.classList.remove('cursor-grabbing');
+        });
+
+        track.addEventListener('mouseup', () => {
+            isDown = false;
+            track.classList.remove('cursor-grabbing');
+        });
+
+        track.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - track.offsetLeft;
+            const walk = (x - startX) * 1.5;
+            track.scrollLeft = scrollLeft - walk;
+        });
+    });
+</script>
+@endpush

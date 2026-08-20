@@ -40,6 +40,10 @@ class Post extends Model
         'views_count' => 'integer',
     ];
 
+    protected $appends = [
+        'thumbnail_url',
+    ];
+
     /**
      * Boot model events for automatic slug and reading time calculation.
      */
@@ -48,6 +52,23 @@ class Post extends Model
         parent::boot();
 
         static::saving(function ($post) {
+            // Clean HTML entities (such as &amp; -> &) in title, excerpt, and SEO fields
+            if (!empty($post->title)) {
+                $post->title = html_entity_decode(html_entity_decode($post->title, ENT_QUOTES | ENT_HTML5, 'UTF-8'), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            }
+
+            if (!empty($post->excerpt)) {
+                $post->excerpt = html_entity_decode(html_entity_decode($post->excerpt, ENT_QUOTES | ENT_HTML5, 'UTF-8'), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            }
+
+            if (!empty($post->meta_title)) {
+                $post->meta_title = html_entity_decode(html_entity_decode($post->meta_title, ENT_QUOTES | ENT_HTML5, 'UTF-8'), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            }
+
+            if (!empty($post->meta_description)) {
+                $post->meta_description = html_entity_decode(html_entity_decode($post->meta_description, ENT_QUOTES | ENT_HTML5, 'UTF-8'), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            }
+
             if (empty($post->slug)) {
                 $post->slug = Str::slug($post->title);
             }
@@ -155,11 +176,28 @@ class Post extends Model
     }
 
     /**
+     * Get clean title with decoded HTML entities (&amp; -> &).
+     */
+    public function getTitleAttribute($value): string
+    {
+        return html_entity_decode($value ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+
+    /**
+     * Get clean excerpt with decoded HTML entities (&amp; -> &).
+     */
+    public function getExcerptAttribute($value): ?string
+    {
+        return $value !== null ? html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8') : null;
+    }
+
+    /**
      * Helper to get SEO Title.
      */
     public function getSeoTitleAttribute(): string
     {
-        return $this->meta_title ?: $this->title . ' — sejan.dev';
+        $raw = $this->meta_title ?: $this->title . ' — sejan.dev';
+        return html_entity_decode($raw, ENT_QUOTES | ENT_HTML5, 'UTF-8');
     }
 
     /**
@@ -167,6 +205,27 @@ class Post extends Model
      */
     public function getSeoDescriptionAttribute(): string
     {
-        return $this->meta_description ?: ($this->excerpt ?: Str::limit(strip_tags($this->content), 160));
+        $raw = $this->meta_description ?: ($this->excerpt ?: Str::limit(strip_tags($this->content), 160));
+        return html_entity_decode($raw, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+
+    /**
+     * Get 300x300 thumbnail URL for post cards (falls back to featured_image if no thumbnail exists).
+     */
+    public function getThumbnailUrlAttribute(): ?string
+    {
+        if (empty($this->featured_image)) {
+            return null;
+        }
+
+        return app(\App\Services\Image\ThumbnailService::class)->getPostThumbnailUrl($this);
+    }
+
+    /**
+     * Alias for thumbnail URL.
+     */
+    public function getFeaturedImageThumbnailAttribute(): ?string
+    {
+        return $this->getThumbnailUrlAttribute();
     }
 }

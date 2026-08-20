@@ -8,6 +8,7 @@ use App\Models\Post;
 use App\Models\Tag;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -20,14 +21,13 @@ class PostController extends Controller
     {
         $status = $request->query('status');
         $search = $request->query('q');
+        $sort = $request->query('sort', 'newest');
 
         if ($status === 'trashed') {
             $query = Post::onlyTrashed()
-                ->with(['user', 'categories', 'tags'])
-                ->latest('deleted_at');
+                ->with(['user', 'categories', 'tags']);
         } else {
-            $query = Post::with(['user', 'categories', 'tags'])
-                ->latest('created_at');
+            $query = Post::with(['user', 'categories', 'tags']);
 
             if (!empty($status)) {
                 $query->where('status', $status);
@@ -38,12 +38,26 @@ class PostController extends Controller
             $query->search($search);
         }
 
+        // Apply Sorting (Default: Newest First)
+        match ($sort) {
+            'oldest' => $query->orderBy('created_at', 'asc')->orderBy('id', 'asc'),
+            'title_asc', 'title' => $query->orderBy('title', 'asc'),
+            'title_desc' => $query->orderBy('title', 'desc'),
+            'views_desc', 'views', 'popular' => $query->orderByDesc('views_count')->orderByDesc('id'),
+            'views_asc' => $query->orderBy('views_count', 'asc')->orderByDesc('id'),
+            'published_desc', 'published' => $query->orderByRaw('published_at IS NULL, published_at DESC')->orderByDesc('id'),
+            'published_asc' => $query->orderByRaw('published_at IS NULL, published_at ASC')->orderBy('id', 'asc'),
+            'updated' => $query->orderByDesc('updated_at')->orderByDesc('id'),
+            default => $query->orderByDesc('created_at')->orderByDesc('id'),
+        };
+
         $posts = $query->paginate(15)->withQueryString();
 
         return view('admin.posts.index', [
             'posts' => $posts,
             'currentStatus' => $status,
             'search' => $search,
+            'sort' => $sort,
             'totalCount' => Post::count(),
             'publishedCount' => Post::where('status', 'published')->count(),
             'draftCount' => Post::where('status', 'draft')->count(),
@@ -123,6 +137,10 @@ class PostController extends Controller
             $post->tags()->sync($tagIds);
         }
 
+        if (!empty($post->featured_image)) {
+            app(\App\Services\Image\ThumbnailService::class)->generatePostThumbnail($post);
+        }
+
         return redirect()->route('admin.posts.edit', $post)->with('status', 'Article created successfully!');
     }
 
@@ -199,6 +217,10 @@ class PostController extends Controller
                 $tagIds[] = $tag->id;
             }
             $post->tags()->sync($tagIds);
+        }
+
+        if (!empty($post->featured_image)) {
+            app(\App\Services\Image\ThumbnailService::class)->generatePostThumbnail($post);
         }
 
         return redirect()->route('admin.posts.edit', $post)->with('status', 'Article updated successfully!');

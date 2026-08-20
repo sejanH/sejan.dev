@@ -22,17 +22,29 @@ class Category extends Model
     ];
 
     /**
-     * Boot model events to automatically generate slug if omitted.
+     * Boot model events to automatically decode entities and generate slug if omitted.
      */
     protected static function boot(): void
     {
         parent::boot();
 
-        static::creating(function ($category) {
+        static::saving(function ($category) {
+            if (!empty($category->name)) {
+                $category->name = html_entity_decode(html_entity_decode($category->name, ENT_QUOTES | ENT_HTML5, 'UTF-8'), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            }
+
             if (empty($category->slug)) {
                 $category->slug = Str::slug($category->name);
             }
         });
+    }
+
+    /**
+     * Get clean category name with decoded entities (&amp; -> &).
+     */
+    public function getNameAttribute($value): string
+    {
+        return html_entity_decode($value ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
     }
 
     /**

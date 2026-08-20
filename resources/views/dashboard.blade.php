@@ -144,21 +144,21 @@
                     </div>
                 </div>
 
-                <!-- Stat 4: SEO & Infrastructure -->
+                <!-- Stat 4: Taxonomies & Tags -->
                 <div class="glass-card rounded-2xl p-5 border border-slate-200 bg-white relative overflow-hidden group hover:border-purple-300 transition shadow-xs">
                     <div class="flex items-center justify-between mb-3">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">SEO & Assets</span>
-                        <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Taxonomies</span>
+                        <a href="{{ route('admin.categories.index') }}" class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100 hover:bg-purple-100 transition" title="Manage Taxonomies">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                             </svg>
-                        </div>
+                        </a>
                     </div>
-                    <div class="text-3xl font-extrabold text-slate-900 tracking-tight">{{ $stats['total_redirects'] }}</div>
+                    <div class="text-3xl font-extrabold text-slate-900 tracking-tight">{{ $stats['total_categories'] }} <span class="text-xs font-semibold text-slate-400">Categories</span></div>
                     <div class="mt-2 flex items-center gap-1.5 text-xs text-slate-500">
-                        <span class="text-purple-700 font-semibold">301 Rules</span>
+                        <a href="{{ route('admin.tags.index') }}" class="text-purple-700 font-semibold hover:underline">{{ $stats['total_tags'] }} Tags</a>
                         <span>&bull;</span>
-                        <span>{{ $stats['total_media'] }} Media Files</span>
+                        <a href="{{ route('admin.categories.index') }}" class="text-slate-600 hover:text-emerald-700">Manage &rarr;</a>
                     </div>
                 </div>
             </div>

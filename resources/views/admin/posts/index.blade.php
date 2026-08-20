@@ -44,36 +44,64 @@
                 </div>
             @endif
 
-            <!-- Filter Bar -->
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-                <div class="flex items-center gap-2">
-                    <a href="{{ route('admin.posts.index') }}" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold {{ empty($currentStatus) ? 'bg-emerald-600 text-white shadow-2xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100' }} transition">
+            <!-- Filter & Sort Bar -->
+            <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-2">
+                    <a href="{{ route('admin.posts.index', array_filter(['q' => $search, 'sort' => $sort !== 'newest' ? $sort : null])) }}" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold {{ empty($currentStatus) ? 'bg-emerald-600 text-white shadow-2xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100' }} transition">
                         All ({{ $totalCount }})
                     </a>
-                    <a href="{{ route('admin.posts.index', ['status' => 'published']) }}" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold {{ $currentStatus === 'published' ? 'bg-emerald-600 text-white shadow-2xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100' }} transition">
+                    <a href="{{ route('admin.posts.index', array_filter(['status' => 'published', 'q' => $search, 'sort' => $sort !== 'newest' ? $sort : null])) }}" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold {{ $currentStatus === 'published' ? 'bg-emerald-600 text-white shadow-2xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100' }} transition">
                         Published ({{ $publishedCount }})
                     </a>
-                    <a href="{{ route('admin.posts.index', ['status' => 'draft']) }}" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold {{ $currentStatus === 'draft' ? 'bg-emerald-600 text-white shadow-2xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100' }} transition">
+                    <a href="{{ route('admin.posts.index', array_filter(['status' => 'draft', 'q' => $search, 'sort' => $sort !== 'newest' ? $sort : null])) }}" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold {{ $currentStatus === 'draft' ? 'bg-emerald-600 text-white shadow-2xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100' }} transition">
                         Drafts ({{ $draftCount }})
                     </a>
-                    <a href="{{ route('admin.posts.index', ['status' => 'trashed']) }}" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold {{ $currentStatus === 'trashed' ? 'bg-rose-600 text-white shadow-2xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100' }} transition flex items-center gap-1.5">
+                    <a href="{{ route('admin.posts.index', array_filter(['status' => 'trashed', 'q' => $search, 'sort' => $sort !== 'newest' ? $sort : null])) }}" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold {{ $currentStatus === 'trashed' ? 'bg-rose-600 text-white shadow-2xs' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100' }} transition flex items-center gap-1.5">
                         <span>Trash</span>
                         <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $currentStatus === 'trashed' ? 'bg-rose-700 text-white' : 'bg-slate-100 text-slate-600' }}">{{ $trashCount }}</span>
                     </a>
                 </div>
 
-                <form action="{{ route('admin.posts.index') }}" method="GET" class="relative max-w-xs w-full">
-                    <input
-                        type="text"
-                        name="q"
-                        value="{{ $search }}"
-                        placeholder="Search posts..."
-                        class="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition shadow-2xs"
-                    />
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
+                <form action="{{ route('admin.posts.index') }}" method="GET" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                    @if (!empty($currentStatus))
+                        <input type="hidden" name="status" value="{{ $currentStatus }}">
+                    @endif
+
+                    <div class="relative flex-1 sm:w-56">
+                        <input
+                            type="text"
+                            name="q"
+                            value="{{ $search }}"
+                            placeholder="Search posts..."
+                            class="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition shadow-2xs"
+                        />
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="relative">
+                        <select
+                            name="sort"
+                            onchange="this.form.submit()"
+                            class="w-full sm:w-auto pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:border-emerald-500 shadow-2xs cursor-pointer appearance-none"
+                        >
+                            <option value="newest" {{ ($sort ?? 'newest') === 'newest' ? 'selected' : '' }}>Newest First (Default)</option>
+                            <option value="oldest" {{ ($sort ?? '') === 'oldest' ? 'selected' : '' }}>Oldest First</option>
+                            <option value="title_asc" {{ ($sort ?? '') === 'title_asc' ? 'selected' : '' }}>Title (A–Z)</option>
+                            <option value="title_desc" {{ ($sort ?? '') === 'title_desc' ? 'selected' : '' }}>Title (Z–A)</option>
+                            <option value="views_desc" {{ in_array($sort ?? '', ['views_desc', 'views', 'popular']) ? 'selected' : '' }}>Most Views</option>
+                            <option value="views_asc" {{ ($sort ?? '') === 'views_asc' ? 'selected' : '' }}>Least Views</option>
+                            <option value="published_desc" {{ ($sort ?? '') === 'published_desc' ? 'selected' : '' }}>Published Date</option>
+                            <option value="updated" {{ ($sort ?? '') === 'updated' ? 'selected' : '' }}>Recently Updated</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-slate-400">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -84,11 +112,56 @@
                     <table class="w-full text-left text-xs text-slate-700">
                         <thead class="bg-slate-50 border-b border-slate-200 text-[11px] uppercase tracking-wider text-slate-500">
                             <tr>
-                                <th class="py-3.5 px-6">Title & Summary</th>
+                                <th class="py-3.5 px-6">
+                                    <a
+                                        href="{{ route('admin.posts.index', array_filter(['status' => $currentStatus, 'q' => $search, 'sort' => $sort === 'title_asc' ? 'title_desc' : 'title_asc'])) }}"
+                                        class="inline-flex items-center gap-1.5 hover:text-emerald-600 transition group"
+                                        title="Sort by Title"
+                                    >
+                                        <span>Title & Summary</span>
+                                        @if ($sort === 'title_asc')
+                                            <span class="text-emerald-600 font-bold">↑</span>
+                                        @elseif ($sort === 'title_desc')
+                                            <span class="text-emerald-600 font-bold">↓</span>
+                                        @else
+                                            <span class="text-slate-300 group-hover:text-slate-400">↕</span>
+                                        @endif
+                                    </a>
+                                </th>
                                 <th class="py-3.5 px-4">Categories</th>
                                 <th class="py-3.5 px-4">Status</th>
-                                <th class="py-3.5 px-4">Views</th>
-                                <th class="py-3.5 px-4">Date</th>
+                                <th class="py-3.5 px-4">
+                                    <a
+                                        href="{{ route('admin.posts.index', array_filter(['status' => $currentStatus, 'q' => $search, 'sort' => $sort === 'views_desc' ? 'views_asc' : 'views_desc'])) }}"
+                                        class="inline-flex items-center gap-1.5 hover:text-emerald-600 transition group"
+                                        title="Sort by Views"
+                                    >
+                                        <span>Views</span>
+                                        @if ($sort === 'views_desc' || $sort === 'views' || $sort === 'popular')
+                                            <span class="text-emerald-600 font-bold">↓</span>
+                                        @elseif ($sort === 'views_asc')
+                                            <span class="text-emerald-600 font-bold">↑</span>
+                                        @else
+                                            <span class="text-slate-300 group-hover:text-slate-400">↕</span>
+                                        @endif
+                                    </a>
+                                </th>
+                                <th class="py-3.5 px-4">
+                                    <a
+                                        href="{{ route('admin.posts.index', array_filter(['status' => $currentStatus, 'q' => $search, 'sort' => $sort === 'newest' ? 'oldest' : 'newest'])) }}"
+                                        class="inline-flex items-center gap-1.5 hover:text-emerald-600 transition group"
+                                        title="Sort by Date (Default: Newest First)"
+                                    >
+                                        <span>Date</span>
+                                        @if ($sort === 'newest' || empty($sort))
+                                            <span class="text-emerald-600 font-bold">↓</span>
+                                        @elseif ($sort === 'oldest')
+                                            <span class="text-emerald-600 font-bold">↑</span>
+                                        @else
+                                            <span class="text-slate-300 group-hover:text-slate-400">↕</span>
+                                        @endif
+                                    </a>
+                                </th>
                                 <th class="py-3.5 px-6 text-right">Actions</th>
                             </tr>
                         </thead>

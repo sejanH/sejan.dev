@@ -147,12 +147,13 @@ class WordPressDatabaseMigrator
         $terms = $stmt->fetchAll();
 
         foreach ($terms as $term) {
+            $cleanName = html_entity_decode(html_entity_decode($term['name'], ENT_QUOTES | ENT_HTML5, 'UTF-8'), ENT_QUOTES | ENT_HTML5, 'UTF-8');
             if ($term['taxonomy'] === 'category') {
                 Category::updateOrCreate(
                     ['wp_id' => $term['term_id']],
                     [
-                        'name' => $term['name'],
-                        'slug' => $term['slug'] ?: Str::slug($term['name']),
+                        'name' => $cleanName,
+                        'slug' => $term['slug'] ?: Str::slug($cleanName),
                         'description' => $term['description'] ?: null,
                     ]
                 );
@@ -161,8 +162,8 @@ class WordPressDatabaseMigrator
                 Tag::updateOrCreate(
                     ['wp_id' => $term['term_id']],
                     [
-                        'name' => $term['name'],
-                        'slug' => $term['slug'] ?: Str::slug($term['name']),
+                        'name' => $cleanName,
+                        'slug' => $term['slug'] ?: Str::slug($cleanName),
                         'description' => $term['description'] ?: null,
                     ]
                 );
@@ -330,8 +331,8 @@ class WordPressDatabaseMigrator
                     }
                 }
 
-                $cleanContent = $this->transformer->transform($wpPost['post_content']);
-                $slug = $wpPost['post_name'] ?: Str::slug($wpPost['post_title']);
+                $cleanTitle = html_entity_decode(html_entity_decode($wpPost['post_title'] ?: 'Untitled Post', ENT_QUOTES | ENT_HTML5, 'UTF-8'), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $slug = $wpPost['post_name'] ?: Str::slug($cleanTitle);
                 $publishedAt = $wpPost['post_date'] ? Carbon::parse($wpPost['post_date']) : now();
 
                 // Unique slug constraint check
@@ -340,20 +341,23 @@ class WordPressDatabaseMigrator
                     $slug .= '-' . $wpPost['ID'];
                 }
 
+                $rawExcerpt = $wpPost['post_excerpt'] ? trim($wpPost['post_excerpt']) : $this->transformer->makeExcerpt($cleanContent);
+                $cleanExcerpt = html_entity_decode($rawExcerpt, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
                 $post = Post::updateOrCreate(
                     ['wp_id' => $wpPost['ID']],
                     [
                         'user_id' => $defaultUserId,
-                        'title' => $wpPost['post_title'] ?: 'Untitled Post',
+                        'title' => $cleanTitle,
                         'slug' => $slug,
-                        'excerpt' => $wpPost['post_excerpt'] ? trim($wpPost['post_excerpt']) : $this->transformer->makeExcerpt($cleanContent),
+                        'excerpt' => $cleanExcerpt,
                         'content' => $cleanContent,
                         'featured_image' => $featuredImage,
                         'status' => $wpPost['post_status'] === 'publish' ? 'published' : 'draft',
                         'published_at' => $wpPost['post_status'] === 'publish' ? $publishedAt : null,
                         'is_featured' => false,
-                        'meta_title' => $metaTitle,
-                        'meta_description' => $metaDesc,
+                        'meta_title' => $metaTitle ? html_entity_decode($metaTitle, ENT_QUOTES | ENT_HTML5, 'UTF-8') : null,
+                        'meta_description' => $metaDesc ? html_entity_decode($metaDesc, ENT_QUOTES | ENT_HTML5, 'UTF-8') : null,
                         'wp_post_type' => $wpPost['post_type'],
                     ]
                 );

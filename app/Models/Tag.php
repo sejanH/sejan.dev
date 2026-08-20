@@ -19,17 +19,29 @@ class Tag extends Model
     ];
 
     /**
-     * Boot model events to automatically generate slug.
+     * Boot model events to automatically decode entities and generate slug.
      */
     protected static function boot(): void
     {
         parent::boot();
 
-        static::creating(function ($tag) {
+        static::saving(function ($tag) {
+            if (!empty($tag->name)) {
+                $tag->name = html_entity_decode(html_entity_decode($tag->name, ENT_QUOTES | ENT_HTML5, 'UTF-8'), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            }
+
             if (empty($tag->slug)) {
                 $tag->slug = Str::slug($tag->name);
             }
         });
+    }
+
+    /**
+     * Get clean tag name with decoded entities (&amp; -> &).
+     */
+    public function getNameAttribute($value): string
+    {
+        return html_entity_decode($value ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
     }
 
     /**

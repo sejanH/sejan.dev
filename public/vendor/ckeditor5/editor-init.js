@@ -89,6 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .then(editor => {
             globalEditorInstance = editor;
+            window.globalEditorInstance = editor;
+            window.editorInstance = editor;
 
             // Sync on change to hidden content input & live stats
             editor.model.document.on('change:data', () => {
@@ -127,27 +129,35 @@ document.addEventListener('DOMContentLoaded', () => {
  * Global function called by the Media Picker modal to insert an image into CKEditor.
  */
 function insertImageIntoEditor(mediaItem) {
-    if (!globalEditorInstance || !mediaItem) return;
+    const editor = window.editorInstance || window.globalEditorInstance || globalEditorInstance;
+    if (!editor || !mediaItem) return;
 
-    const imgAlt = mediaItem.alt_text ? ` alt="${mediaItem.alt_text}"` : '';
-    const figCaption = mediaItem.caption ? `<figcaption class="text-xs text-center text-slate-400 mt-2">${mediaItem.caption}</figcaption>` : '';
-    const imageHtml = `
-        <figure class="my-6 rounded-2xl overflow-hidden">
-            <img src="${mediaItem.url}"${imgAlt} class="w-full rounded-2xl shadow-lg" />
-            ${figCaption}
-        </figure>
-    `;
-
-    const viewFragment = globalEditorInstance.data.processor.toView(imageHtml);
-    const modelFragment = globalEditorInstance.data.toModel(viewFragment);
-    globalEditorInstance.model.insertContent(modelFragment);
+    try {
+        editor.model.change(writer => {
+            const imageElement = writer.createElement('imageBlock', {
+                src: mediaItem.url,
+                alt: mediaItem.alt_text || mediaItem.original_name || ''
+            });
+            editor.model.insertContent(imageElement, editor.model.document.selection);
+        });
+    } catch (e) {
+        console.warn('imageBlock insert failed, trying HTML fallback:', e);
+        try {
+            const viewFragment = editor.data.processor.toView(`<img src="${mediaItem.url}" alt="${mediaItem.alt_text || ''}" />`);
+            const modelFragment = editor.data.toModel(viewFragment);
+            editor.model.insertContent(modelFragment);
+        } catch (err) {
+            console.error('Image insertion failed:', err);
+        }
+    }
 
     // Also update hidden form content input
     const contentInput = document.getElementById('content');
     if (contentInput) {
-        contentInput.value = globalEditorInstance.getData();
+        contentInput.value = editor.getData();
     }
 }
+window.insertImageIntoEditor = insertImageIntoEditor;
 
 /**
  * Insert formatted snippet helpers into CKEditor.
@@ -183,9 +193,55 @@ function updateFeaturedPreview(url) {
         if (previewContainer) previewContainer.classList.add('hidden');
     }
 }
+window.updateFeaturedPreview = updateFeaturedPreview;
 
 function clearFeaturedImage() {
     const input = document.getElementById('featured_image');
     if (input) input.value = '';
     updateFeaturedPreview('');
 }
+window.clearFeaturedImage = clearFeaturedImage;
+
+async function handleDirectFeaturedUpload(files) {
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    const formData = new FormData();
+    formData.append('file', file);
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+    const input = document.getElementById('featured_image');
+    const origPlaceholder = input ? input.placeholder : '';
+    if (input) input.placeholder = 'Uploading image...';
+
+    try {
+        const res = await fetch('/admin/media', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        });
+
+        const data = await res.json();
+        if (res.ok && (data.url || (data.files && data.files.length > 0))) {
+            const finalUrl = data.url || data.files[0].url;
+            if (input) {
+                input.value = finalUrl;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            updateFeaturedPreview(finalUrl);
+        } else {
+            alert(data.error || data.message || 'Failed to upload image.');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Upload request failed.');
+    } finally {
+        if (input) input.placeholder = origPlaceholder;
+        const fileInput = document.getElementById('directFeaturedFileInput');
+        if (fileInput) fileInput.value = '';
+    }
+}
+window.handleDirectFeaturedUpload = handleDirectFeaturedUpload;

@@ -4,9 +4,9 @@
 @section('meta_description', $description)
 @section('canonical_url', url()->current())
 
-@if ($posts->isNotEmpty() && $posts->first()->featured_image)
+@if ($posts->isNotEmpty() && $posts->first()->thumbnail_url)
     @section('preload_headers')
-        <link rel="preload" as="image" href="{{ $posts->first()->featured_image }}" fetchpriority="high">
+        <link rel="preload" as="image" href="{{ $posts->first()->thumbnail_url }}" fetchpriority="high">
     @endsection
 @endif
 
@@ -93,7 +93,7 @@
                         <div class="relative h-52 w-full overflow-hidden bg-slate-100">
                             @if ($post->featured_image)
                                 <img
-                                    src="{{ $post->featured_image }}"
+                                    src="{{ $post->thumbnail_url }}"
                                     alt="{{ $post->title }}"
                                     class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                                     @if ($loop->first)
