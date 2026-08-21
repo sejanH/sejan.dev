@@ -8,6 +8,10 @@
 
     <title>@yield('title', 'Dashboard') — Sejan Control Center</title>
 
+    <!-- Cloudflare R2 CDN Preconnect & DNS-Prefetch for Fast Media Loading -->
+    <link rel="preconnect" href="https://cdn.sejan.dev" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.sejan.dev">
+
     <!-- Fonts (Non-Render-Blocking Asynchronous Load with Instant System Fallback) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

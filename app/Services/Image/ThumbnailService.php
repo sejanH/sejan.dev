@@ -38,8 +38,10 @@ class ThumbnailService
         }
 
         $localRelativePath = $this->extractRelativeStoragePath($featuredImage);
+        $diskName = (str_starts_with($localRelativePath ?? '', 'blog/') || config('filesystems.media_disk') === 's3') && Storage::disk('s3')->exists($localRelativePath ?? '') ? 's3' : 'public';
+        $disk = Storage::disk($diskName);
 
-        // Determine destination thumbnail relative path in 'public' disk
+        // Determine destination thumbnail relative path
         if ($localRelativePath) {
             $dir = dirname($localRelativePath);
             $filename = pathinfo($localRelativePath, PATHINFO_FILENAME);
@@ -51,18 +53,14 @@ class ThumbnailService
             $thumbRelativePath = 'thumbnails/posts/post-' . $post->id . '-300x300.' . $ext;
         }
 
-        $disk = Storage::disk('public');
-        $fullThumbPath = $disk->path($thumbRelativePath);
-
         // Check if thumbnail already exists
         if (!$force && $disk->exists($thumbRelativePath)) {
-            $dimensions = @getimagesize($fullThumbPath);
             return [
                 'success' => true,
                 'url' => $disk->url($thumbRelativePath),
-                'path' => $fullThumbPath,
-                'width' => $dimensions[0] ?? null,
-                'height' => $dimensions[1] ?? null,
+                'path' => $thumbRelativePath,
+                'width' => null,
+                'height' => null,
                 'error' => null,
             ];
         }
@@ -71,7 +69,7 @@ class ThumbnailService
             // Load image source
             $imageSource = null;
             if ($localRelativePath && $disk->exists($localRelativePath)) {
-                $imageSource = $disk->path($localRelativePath);
+                $imageSource = $disk->get($localRelativePath);
             } else {
                 // Fetch image content from URL
                 $response = Http::timeout(15)->get($featuredImage);
@@ -97,16 +95,24 @@ class ThumbnailService
             $thumbWidth = $img->width();
             $thumbHeight = $img->height();
 
-            // Ensure directory exists on disk
-            $disk->makeDirectory(dirname($thumbRelativePath));
+            $encodedThumb = match(strtolower($extension ?? 'jpg')) {
+                'png' => (string) $img->toPng(),
+                'webp' => (string) $img->toWebp(self::THUMB_QUALITY),
+                'gif' => (string) $img->toGif(),
+                default => (string) $img->toJpeg(self::THUMB_QUALITY),
+            };
 
-            // Save with optimal quality
-            $img->save($fullThumbPath, quality: self::THUMB_QUALITY);
+            $options = $diskName === 's3' ? [
+                'visibility' => 'public',
+                'CacheControl' => env('AWS_CACHE_CONTROL', 'public, max-age=31536000, immutable'),
+            ] : 'public';
+
+            $disk->put($thumbRelativePath, $encodedThumb, $options);
 
             return [
                 'success' => true,
                 'url' => $disk->url($thumbRelativePath),
-                'path' => $fullThumbPath,
+                'path' => $thumbRelativePath,
                 'width' => $thumbWidth,
                 'height' => $thumbHeight,
                 'error' => null,
@@ -134,9 +140,7 @@ class ThumbnailService
             return null;
         }
 
-        $disk = Storage::disk('public');
-
-        // 1. Check local media -300x300 naming convention
+        // 1. Check if the image is on Cloudflare R2 CDN or has a relative storage path
         $localRelativePath = $this->extractRelativeStoragePath($featuredImage);
         if ($localRelativePath) {
             $dir = dirname($localRelativePath);
@@ -144,22 +148,31 @@ class ThumbnailService
             $extension = pathinfo($localRelativePath, PATHINFO_EXTENSION) ?: 'jpg';
             $thumbRelativePath = ($dir === '.' ? '' : $dir . '/') . $filename . '-300x300.' . $extension;
 
-            if ($disk->exists($thumbRelativePath)) {
-                return $disk->url($thumbRelativePath);
+            // If it's on Cloudflare R2 CDN
+            if (str_starts_with($localRelativePath, 'blog/') || str_contains($featuredImage, 'cdn.sejan.dev')) {
+                $cdnBase = rtrim(config('filesystems.disks.s3.url', 'https://cdn.sejan.dev'), '/');
+                return $cdnBase . '/' . ltrim($thumbRelativePath, '/');
+            }
+
+            // If it's on local public disk
+            $publicDisk = Storage::disk('public');
+            if ($publicDisk->exists($thumbRelativePath)) {
+                return $publicDisk->url($thumbRelativePath);
             }
         }
 
         // 2. Check external / post-specific thumbnail path
+        $publicDisk = Storage::disk('public');
         $postThumbPath = 'thumbnails/posts/post-' . $post->id . '-300x300.jpg';
-        if ($disk->exists($postThumbPath)) {
-            return $disk->url($postThumbPath);
+        if ($publicDisk->exists($postThumbPath)) {
+            return $publicDisk->url($postThumbPath);
         }
 
         // Check for webp / png variants
         foreach (['png', 'webp', 'jpeg'] as $ext) {
             $variantPath = 'thumbnails/posts/post-' . $post->id . '-300x300.' . $ext;
-            if ($disk->exists($variantPath)) {
-                return $disk->url($variantPath);
+            if ($publicDisk->exists($variantPath)) {
+                return $publicDisk->url($variantPath);
             }
         }
 
@@ -188,7 +201,8 @@ class ThumbnailService
         }
 
         $localPath = $media->path;
-        $disk = Storage::disk($media->disk ?: 'public');
+        $diskName = $media->disk ?: config('filesystems.media_disk', 'public');
+        $disk = Storage::disk($diskName);
 
         if (!$disk->exists($localPath)) {
             return [
@@ -205,31 +219,41 @@ class ThumbnailService
         $filename = pathinfo($localPath, PATHINFO_FILENAME);
         $extension = pathinfo($localPath, PATHINFO_EXTENSION) ?: 'jpg';
         $thumbRelativePath = ($dir === '.' ? '' : $dir . '/') . $filename . '-300x300.' . $extension;
-        $fullThumbPath = $disk->path($thumbRelativePath);
 
         if (!$force && $disk->exists($thumbRelativePath)) {
-            $dimensions = @getimagesize($fullThumbPath);
             return [
                 'success' => true,
                 'url' => $disk->url($thumbRelativePath),
-                'path' => $fullThumbPath,
-                'width' => $dimensions[0] ?? null,
-                'height' => $dimensions[1] ?? null,
+                'path' => $thumbRelativePath,
+                'width' => null,
+                'height' => null,
                 'error' => null,
             ];
         }
 
         try {
-            $img = Image::read($disk->path($localPath));
+            $imageBytes = $disk->get($localPath);
+            $img = Image::read($imageBytes);
             $img->scaleDown(width: self::THUMB_MAX_WIDTH, height: self::THUMB_MAX_HEIGHT);
 
-            $disk->makeDirectory(dirname($thumbRelativePath));
-            $img->save($fullThumbPath, quality: self::THUMB_QUALITY);
+            $encodedThumb = match(strtolower($extension)) {
+                'png' => (string) $img->toPng(),
+                'webp' => (string) $img->toWebp(self::THUMB_QUALITY),
+                'gif' => (string) $img->toGif(),
+                default => (string) $img->toJpeg(self::THUMB_QUALITY),
+            };
+
+            $options = $diskName === 's3' ? [
+                'visibility' => 'public',
+                'CacheControl' => env('AWS_CACHE_CONTROL', 'public, max-age=31536000, immutable'),
+            ] : 'public';
+
+            $disk->put($thumbRelativePath, $encodedThumb, $options);
 
             return [
                 'success' => true,
                 'url' => $disk->url($thumbRelativePath),
-                'path' => $fullThumbPath,
+                'path' => $thumbRelativePath,
                 'width' => $img->width(),
                 'height' => $img->height(),
                 'error' => null,
@@ -257,13 +281,18 @@ class ThumbnailService
         }
 
         $localPath = $media->path;
-        $disk = Storage::disk($media->disk ?: 'public');
-
+        $diskName = $media->disk ?: config('filesystems.media_disk', 'public');
         $dir = dirname($localPath);
         $filename = pathinfo($localPath, PATHINFO_FILENAME);
         $extension = pathinfo($localPath, PATHINFO_EXTENSION) ?: 'jpg';
         $thumbRelativePath = ($dir === '.' ? '' : $dir . '/') . $filename . '-300x300.' . $extension;
 
+        if ($diskName === 's3' || str_starts_with($localPath, 'blog/')) {
+            $cdnBase = rtrim(config('filesystems.disks.s3.url', 'https://cdn.sejan.dev'), '/');
+            return $cdnBase . '/' . ltrim($thumbRelativePath, '/');
+        }
+
+        $disk = Storage::disk($diskName);
         if ($disk->exists($thumbRelativePath)) {
             return $disk->url($thumbRelativePath);
         }
@@ -272,11 +301,17 @@ class ThumbnailService
     }
 
     /**
-     * Extract relative path inside public storage disk from a URL or string.
+     * Extract relative path inside public or S3 storage disk from a URL or string.
      */
     public function extractRelativeStoragePath(string $urlOrPath): ?string
     {
         $clean = trim($urlOrPath);
+
+        // e.g. "https://cdn.sejan.dev/blog/media/2026/08/xyz.jpg"
+        if (str_contains($clean, 'cdn.sejan.dev/')) {
+            $parts = explode('cdn.sejan.dev/', $clean, 2);
+            return ltrim($parts[1], '/');
+        }
 
         // e.g. "https://blog.sejan.dev/storage/media/2026/08/xyz.jpg"
         if (str_contains($clean, '/storage/')) {
@@ -289,12 +324,12 @@ class ThumbnailService
             return substr($clean, 8);
         }
 
-        // e.g. "media/2026/08/xyz.jpg"
-        if (str_starts_with($clean, 'media/')) {
+        // e.g. "media/2026/08/xyz.jpg" or "blog/media/2026/08/xyz.jpg"
+        if (str_starts_with($clean, 'media/') || str_starts_with($clean, 'blog/')) {
             return $clean;
         }
 
-        // If it starts with http/https but does NOT have /storage/, it's external
+        // If it starts with http/https but does NOT match our known domains, it's external
         if (str_starts_with($clean, 'http://') || str_starts_with($clean, 'https://')) {
             return null;
         }

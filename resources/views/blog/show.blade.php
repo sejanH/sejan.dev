@@ -171,7 +171,7 @@
             <div class="min-w-0 space-y-8 lg:col-span-2">
 
                 {{-- Main Article Container --}}
-                <section class="glass-card rounded-3xl p-6 sm:p-10 shadow-xs">
+                <section class="glass-card rounded-3xl p-6 sm:p-10 shadow-xs min-w-0 max-w-full overflow-hidden">
                     {{-- Metadata & Social Share Bar --}}
                     <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-6 mb-8">
                         <div class="flex flex-wrap items-center gap-3 text-xs uppercase tracking-wider text-slate-500 font-medium">
@@ -218,7 +218,7 @@
                     @endif
 
                     {{-- Article Body --}}
-                    <article class="article-prose">
+                    <article class="article-prose min-w-0 max-w-full">
                         {!! $post->content !!}
                     </article>
 

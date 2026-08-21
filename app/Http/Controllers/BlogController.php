@@ -157,6 +157,22 @@ class BlogController extends Controller
     }
 
     /**
+     * Display the Privacy Policy page.
+     */
+    public function privacy(): View
+    {
+        return view('blog.privacy');
+    }
+
+    /**
+     * Display the Terms of Service page.
+     */
+    public function terms(): View
+    {
+        return view('blog.terms');
+    }
+
+    /**
      * Handle public contact form submission.
      */
     public function handleContact(Request $request)

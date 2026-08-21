@@ -121,7 +121,14 @@ class MediaController extends Controller
 
         // Native web image extensions that are directly supported by all browsers
         $nativeWebImages = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'];
-        $directory = 'media/' . date('Y/m');
+        $disk = config('filesystems.media_disk', 's3');
+        $directory = ($disk === 's3' ? 'blog/media/' : 'media/') . date('Y/m');
+        $options = $disk === 's3'
+            ? [
+                'visibility' => 'public',
+                'CacheControl' => env('AWS_CACHE_CONTROL', 'public, max-age=31536000, immutable'),
+            ]
+            : 'public';
 
         foreach ($filesToProcess as $file) {
             $originalName = $file->getClientOriginalName();
@@ -159,7 +166,7 @@ class MediaController extends Controller
                 $path = $directory . '/' . $filename;
                 $encodedJpeg = (string) $interventionImg->toJpeg(90);
 
-                Storage::disk('public')->put($path, $encodedJpeg);
+                Storage::disk($disk)->put($path, $encodedJpeg, $options);
 
                 $mimeType = 'image/jpeg';
                 $size = strlen($encodedJpeg);
@@ -167,7 +174,9 @@ class MediaController extends Controller
                 // Native web image or document file: store directly
                 $finalExt = $extension ?: 'bin';
                 $filename = $sanitizedBaseName . '-' . time() . '-' . Str::random(6) . '.' . $finalExt;
-                $path = $file->storeAs($directory, $filename, 'public');
+                $path = $directory . '/' . $filename;
+
+                Storage::disk($disk)->put($path, file_get_contents($file->getRealPath()), $options);
 
                 if ($isImage && $interventionImg) {
                     $width = $interventionImg->width();
@@ -185,7 +194,7 @@ class MediaController extends Controller
                 'user_id' => auth()->id(),
                 'filename' => $filename,
                 'original_name' => $originalName,
-                'disk' => 'public',
+                'disk' => $disk,
                 'path' => $path,
                 'mime_type' => $mimeType,
                 'size' => $size,
@@ -195,7 +204,11 @@ class MediaController extends Controller
             ]);
 
             if ($media->is_image && $media->mime_type !== 'image/svg+xml') {
-                app(\App\Services\Image\ThumbnailService::class)->generateMediaThumbnail($media);
+                try {
+                    app(\App\Services\Image\ThumbnailService::class)->generateMediaThumbnail($media);
+                } catch (\Throwable $e) {
+                    // Suppress thumbnail error on upload
+                }
             }
 
             $uploadedFiles[] = $media;
@@ -243,8 +256,19 @@ class MediaController extends Controller
      */
     public function destroy(Media $medium): JsonResponse|RedirectResponse
     {
-        if (Storage::disk($medium->disk)->exists($medium->path)) {
-            Storage::disk($medium->disk)->delete($medium->path);
+        $disk = Storage::disk($medium->disk);
+
+        if ($disk->exists($medium->path)) {
+            $disk->delete($medium->path);
+        }
+
+        // Delete thumbnail if present
+        $dir = dirname($medium->path);
+        $filename = pathinfo($medium->path, PATHINFO_FILENAME);
+        $extension = pathinfo($medium->path, PATHINFO_EXTENSION) ?: 'jpg';
+        $thumbRelativePath = ($dir === '.' ? '' : $dir . '/') . $filename . '-300x300.' . $extension;
+        if ($disk->exists($thumbRelativePath)) {
+            $disk->delete($thumbRelativePath);
         }
 
         $medium->delete();

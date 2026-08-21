@@ -69,6 +69,10 @@
     <link rel="alternate" type="application/atom+xml" title="Sejan · Blog (Atom 1.0)" href="{{ route('feed.atom') }}">
     <link rel="sitemap" type="application/xml" title="Sitemap" href="{{ route('sitemap.xml') }}">
 
+    <!-- Cloudflare R2 CDN Preconnect & DNS-Prefetch for Fast Image Loading -->
+    <link rel="preconnect" href="https://cdn.sejan.dev" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.sejan.dev">
+
     <!-- DNS-Prefetch for External Origins (Non-blocking background resolution) -->
     <link rel="dns-prefetch" href="https://www.googletagmanager.com">
     <link rel="dns-prefetch" href="https://pl30906445.effectivecpmnetwork.com">
@@ -237,6 +241,12 @@
                             <a href="{{ route('blog.contact') }}" class="text-xs text-slate-600 transition-colors hover:text-emerald-600 hover:translate-x-1 inline-block">Contact</a>
                         </li>
                         <li>
+                            <a href="{{ route('blog.privacy') }}" class="text-xs text-slate-600 transition-colors hover:text-emerald-600 hover:translate-x-1 inline-block">Privacy Policy</a>
+                        </li>
+                        <li>
+                            <a href="{{ route('blog.terms') }}" class="text-xs text-slate-600 transition-colors hover:text-emerald-600 hover:translate-x-1 inline-block">Terms &amp; Disclaimer</a>
+                        </li>
+                        <li>
                             <a href="{{ route('feed.rss') }}" target="_blank" class="text-xs text-slate-600 transition-colors hover:text-emerald-600 hover:translate-x-1 inline-flex items-center gap-1">
                                 <span>RSS Feed</span>
                                 <svg class="w-3 h-3 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
@@ -279,6 +289,11 @@
             <!-- Bottom Copyright Bar -->
             <div class="mt-6 pt-5 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-slate-500">
                 <p>© {{ date('Y') }} <a href="https://sejan.dev" class="hover:text-emerald-600 transition-colors">Sejan.dev</a>. All rights reserved.</p>
+                <div class="flex items-center gap-4 text-xs">
+                    <a href="{{ route('blog.privacy') }}" class="hover:text-emerald-600 transition-colors">Privacy Policy</a>
+                    <span>•</span>
+                    <a href="{{ route('blog.terms') }}" class="hover:text-emerald-600 transition-colors">Terms of Service</a>
+                </div>
             </div>
         </div>
     </footer>

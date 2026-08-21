@@ -46,3 +46,149 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
 }
+
+/* ==========================================================================
+   CKEditor Content & Code Snippet Language Badges in Admin Panel
+   ========================================================================== */
+.ck-content {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.75;
+    color: #334155;
+    min-height: 380px;
+}
+
+.ck-content pre {
+    position: relative;
+    padding-top: 2.4rem !important;
+    background: #0f172a !important;
+    color: #f8fafc !important;
+    padding: 2.4rem 1.25rem 1.25rem 1.25rem !important;
+    border-radius: 0.85rem !important;
+    border: 1px solid #1e293b !important;
+    font-family: var(--font-mono), 'JetBrains Mono', monospace !important;
+    font-size: 0.875rem !important;
+    line-height: 1.6 !important;
+}
+
+.ck-content pre::before {
+    content: "● ● ●   CODE SNIPPET";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1.85rem;
+    background: #090d16;
+    border-bottom: 1px solid #1e293b;
+    display: flex;
+    align-items: center;
+    padding: 0 0.85rem;
+    font-family: var(--font-mono), 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94a3b8;
+    border-top-left-radius: 0.8rem;
+    border-top-right-radius: 0.8rem;
+}
+
+/* Specific Language Header Badges */
+.ck-content pre[data-language="bash"]::before,
+.ck-content pre[data-language="sh"]::before,
+.ck-content pre:has(code.language-bash)::before,
+.ck-content pre:has(code.language-sh)::before {
+    content: "● ● ●   BASH / TERMINAL";
+    color: #34d399;
+}
+
+.ck-content pre[data-language="php"]::before,
+.ck-content pre:has(code.language-php)::before {
+    content: "🐘  PHP / LARAVEL";
+    color: #c084fc;
+}
+
+.ck-content pre[data-language="javascript"]::before,
+.ck-content pre[data-language="js"]::before,
+.ck-content pre:has(code.language-javascript)::before,
+.ck-content pre:has(code.language-js)::before {
+    content: "⚡  JAVASCRIPT";
+    color: #facc15;
+}
+
+.ck-content pre[data-language="python"]::before,
+.ck-content pre[data-language="py"]::before,
+.ck-content pre:has(code.language-python)::before {
+    content: "🐍  PYTHON";
+    color: #60a5fa;
+}
+
+.ck-content pre[data-language="dockerfile"]::before,
+.ck-content pre[data-language="docker"]::before,
+.ck-content pre:has(code.language-dockerfile)::before,
+.ck-content pre:has(code.language-docker)::before {
+    content: "🐳  DOCKERFILE";
+    color: #38bdf8;
+}
+
+.ck-content pre[data-language="nginx"]::before,
+.ck-content pre:has(code.language-nginx)::before {
+    content: "🟢  NGINX CONFIG";
+    color: #4ade80;
+}
+
+.ck-content pre[data-language="sql"]::before,
+.ck-content pre:has(code.language-sql)::before {
+    content: "🗄️  SQL QUERY";
+    color: #a78bfa;
+}
+
+.ck-content pre[data-language="json"]::before,
+.ck-content pre:has(code.language-json)::before {
+    content: "📋  JSON";
+    color: #fb923c;
+}
+
+.ck-content pre[data-language="yaml"]::before,
+.ck-content pre[data-language="yml"]::before,
+.ck-content pre:has(code.language-yaml)::before {
+    content: "📄  YAML";
+    color: #f472b6;
+}
+
+.ck-content pre[data-language="html"]::before,
+.ck-content pre:has(code.language-html)::before {
+    content: "🌐  HTML";
+    color: #f97316;
+}
+
+.ck-content pre[data-language="css"]::before,
+.ck-content pre:has(code.language-css)::before {
+    content: "🎨  CSS";
+    color: #38bdf8;
+}
+
+.ck-content pre[data-language="error"]::before,
+.ck-content pre:has(code.language-error)::before,
+.ck-content pre:has(code.language-log)::before {
+    content: "✖  ERROR / STACK TRACE";
+    color: #f87171;
+    background: #1a0a0e;
+    border-bottom: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.ck-content pre[data-language="error"] code,
+.ck-content pre:has(code.language-error) code {
+    color: #fca5a5;
+}
+
+.ck-content blockquote {
+    border-left: 4px solid #10b981;
+    background: #f0fdf4;
+    padding: 0.85rem 1.15rem;
+    border-radius: 0 0.75rem 0.75rem 0;
+    color: #166534;
+    font-style: italic;
+    margin: 1.5rem 0;
+}
+

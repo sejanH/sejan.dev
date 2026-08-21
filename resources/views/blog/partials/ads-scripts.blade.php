@@ -1,18 +1,48 @@
 <!-- ==========================================
-     Blogfront Global Advertising & Analytics Scripts
-     Non-blocking & performance-optimized loading
+     Blogfront High-Performance Analytics & Ads Loader
+     Zero Render-Blocking, Zero Forced Reflows, 100% Core Web Vitals Friendly
      ========================================== -->
 
-<!-- Google tag (gtag.js) - Asynchronous -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-ZPLGDYRX3C"></script>
+<!-- Deferred Google Analytics & Tag Manager (Zero TBT / Zero Initial Reflow) -->
 <script>
+(function() {
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
+    function gtag(){ dataLayer.push(arguments); }
+    window.gtag = gtag;
     gtag('js', new Date());
-    gtag('config', 'G-ZPLGDYRX3C');
+    gtag('config', 'G-ZPLGDYRX3C', { 'send_page_view': true });
+
+    let analyticsLoaded = false;
+    function loadAnalytics() {
+        if (analyticsLoaded) return;
+        analyticsLoaded = true;
+
+        var script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=G-ZPLGDYRX3C';
+        document.head.appendChild(script);
+    }
+
+    // Load analytics on first human interaction or after browser is completely idle
+    ['scroll', 'mousemove', 'touchstart', 'click', 'keydown'].forEach(function(event) {
+        window.addEventListener(event, loadAnalytics, { once: true, passive: true });
+    });
+
+    if ('requestIdleCallback' in window) {
+        window.addEventListener('load', function() {
+            requestIdleCallback(function() {
+                setTimeout(loadAnalytics, 2500);
+            }, { timeout: 4000 });
+        });
+    } else {
+        window.addEventListener('load', function() {
+            setTimeout(loadAnalytics, 3000);
+        });
+    }
+})();
 </script>
 
-<!-- Non-Blocking Deferred Ad Network Loader (Zero Render-Blocking / Zero LCP Delay) -->
+<!-- Non-Blocking Deferred Ad Network Loader (Triggered Strictly On User Interaction) -->
 <script>
 (function() {
     let adsLoaded = false;
@@ -21,7 +51,7 @@
         if (adsLoaded) return;
         adsLoaded = true;
 
-        // Cleanup interaction listeners once triggered
+        // Cleanup interaction listeners
         ['scroll', 'mousemove', 'touchstart', 'click', 'keydown'].forEach(function(event) {
             window.removeEventListener(event, loadAdScripts, { passive: true });
         });
@@ -49,21 +79,21 @@
         document.body.appendChild(script2);
     }
 
-    // Trigger on first user interaction (scroll, touch, click)
+    // Trigger on first user interaction
     ['scroll', 'mousemove', 'touchstart', 'click', 'keydown'].forEach(function(event) {
         window.addEventListener(event, loadAdScripts, { once: true, passive: true });
     });
 
-    // Fallback: load during browser idle or after 3.5s timeout
+    // Fallback on idle
     if ('requestIdleCallback' in window) {
         window.addEventListener('load', function() {
             requestIdleCallback(function() {
-                setTimeout(loadAdScripts, 2000);
-            }, { timeout: 4000 });
+                setTimeout(loadAdScripts, 4000);
+            }, { timeout: 6000 });
         });
     } else {
         window.addEventListener('load', function() {
-            setTimeout(loadAdScripts, 3000);
+            setTimeout(loadAdScripts, 5000);
         });
     }
 })();

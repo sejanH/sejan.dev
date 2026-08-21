@@ -178,10 +178,12 @@
                                 <img
                                     src="{{ $post->thumbnail_url }}"
                                     alt="{{ $post->title }}"
-                                    class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                    @if ($loop->first)
+                                    width="300"
+                                    height="208"
+                                    class="h-full w-full object-cover aspect-[300/208] transition-transform duration-500 group-hover:scale-105"
+                                    @if ($loop->iteration <= 2)
                                         loading="eager"
-                                        fetchpriority="high"
+                                        @if ($loop->first) fetchpriority="high" @endif
                                         decoding="async"
                                     @else
                                         loading="lazy"

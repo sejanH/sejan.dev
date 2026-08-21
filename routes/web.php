@@ -28,8 +28,15 @@ Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->midd
 Route::get('/category/{slug}', [BlogController::class, 'category'])->name('blog.category');
 Route::get('/tag/{slug}', [BlogController::class, 'tag'])->name('blog.tag');
 Route::get('/about', [BlogController::class, 'about'])->name('blog.about');
+Route::get('/privacy-policy', [BlogController::class, 'privacy'])->name('blog.privacy');
+Route::get('/terms-of-service', [BlogController::class, 'terms'])->name('blog.terms');
 Route::get('/contact', [BlogController::class, 'contact'])->name('blog.contact');
 Route::post('/contact', [BlogController::class, 'handleContact'])->middleware(ProtectAgainstSpam::class)->name('blog.contact.send');
+
+// 301 Permanent Redirect for legacy local media storage URLs to Cloudflare R2 CDN
+Route::get('/storage/media/{path}', function (string $path) {
+    return redirect('https://cdn.sejan.dev/blog/media/' . $path, 301);
+})->where('path', '.*');
 
 /*
 |--------------------------------------------------------------------------

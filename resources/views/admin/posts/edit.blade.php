@@ -89,27 +89,194 @@
                             </div>
                         </div>
 
-                        <!-- CKEditor 5 Rich Content Editor -->
-                        <div class="glass-panel rounded-3xl p-6 border border-slate-200 bg-white shadow-xs space-y-3">
-                            <div class="flex items-center justify-between">
-                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700">
-                                    Article Content (Rich Text & Media) *
-                                </label>
+                        <!-- Markdown & Split Live Preview Editor -->
+                        <div class="glass-panel rounded-3xl p-5 sm:p-6 border border-slate-200 bg-white shadow-xs space-y-4">
+                            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-800">
+                                        Article Content (Markdown &amp; Live Split Preview) *
+                                    </label>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">Write with GitHub-flavored markdown. Real-time split preview renders on the right.</p>
+                                </div>
 
-                                <button
-                                    type="button"
-                                    onclick="openMediaPicker('editor')"
-                                    class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition border border-slate-200"
-                                >
-                                    <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
-                                    <span>Insert Media from Library</span>
-                                </button>
+                                <div class="flex items-center gap-2">
+                                    <!-- Layout Switcher (Write / Split / Preview) -->
+                                    <div class="flex items-center gap-1 p-1 rounded-xl bg-slate-100 border border-slate-200 text-xs">
+                                        <button
+                                            type="button"
+                                            class="md-layout-btn px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-900 font-medium transition cursor-pointer"
+                                            data-layout="write"
+                                            onclick="markdownEditorInstance.setLayout('write')"
+                                            title="Write Only (Full width)"
+                                        >
+                                            <span>📝 Write</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="md-layout-btn px-2.5 py-1 rounded-lg bg-white text-emerald-700 shadow-xs font-bold transition cursor-pointer active"
+                                            data-layout="split"
+                                            onclick="markdownEditorInstance.setLayout('split')"
+                                            title="Split Mode (Write &amp; Preview side-by-side)"
+                                        >
+                                            <span>🌗 Split</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="md-layout-btn px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-900 font-medium transition cursor-pointer"
+                                            data-layout="preview"
+                                            onclick="markdownEditorInstance.setLayout('preview')"
+                                            title="Preview Only"
+                                        >
+                                            <span>👁️ Preview</span>
+                                        </button>
+                                    </div>
+
+                                    <!-- Fullscreen Button -->
+                                    <button
+                                        type="button"
+                                        id="mdFullscreenBtn"
+                                        onclick="markdownEditorInstance.toggleFullscreen()"
+                                        title="Toggle Fullscreen Editor"
+                                        class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition border border-slate-200 cursor-pointer"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
 
+                            <!-- Hidden Textarea that submits compiled HTML with the form -->
                             <textarea name="content" id="content" class="hidden">{{ old('content', $post->content) }}</textarea>
-                            <div id="editorContent">{!! old('content', $post->content) !!}</div>
+
+                            <!-- Editor Main Frame -->
+                            <div id="markdownEditor" class="md-editor-container" data-layout="split">
+                                <!-- Markdown Toolbar -->
+                                <div class="md-toolbar">
+                                    <div class="md-toolbar-group">
+                                        <!-- Headings -->
+                                        <button type="button" class="md-btn" onclick="markdownEditorInstance.insertHeading(2)" title="Heading 2 (## )">
+                                            <span class="font-bold text-xs">H2</span>
+                                        </button>
+                                        <button type="button" class="md-btn" onclick="markdownEditorInstance.insertHeading(3)" title="Heading 3 (### )">
+                                            <span class="font-bold text-xs">H3</span>
+                                        </button>
+                                        <button type="button" class="md-btn" onclick="markdownEditorInstance.insertHeading(4)" title="Heading 4 (#### )">
+                                            <span class="font-bold text-xs">H4</span>
+                                        </button>
+
+                                        <div class="md-divider"></div>
+
+                                        <!-- Text Formatting -->
+                                        <button type="button" class="md-btn" onclick="markdownEditorInstance.wrapSelection('**', '**', 'bold text')" title="Bold (Ctrl+B)">
+                                            <span class="font-extrabold">B</span>
+                                        </button>
+                                        <button type="button" class="md-btn" onclick="markdownEditorInstance.wrapSelection('*', '*', 'italic text')" title="Italic (Ctrl+I)">
+                                            <span class="italic font-serif">I</span>
+                                        </button>
+                                        <button type="button" class="md-btn" onclick="markdownEditorInstance.wrapSelection('~~', '~~', 'strikethrough')" title="Strikethrough">
+                                            <span class="line-through">S</span>
+                                        </button>
+                                        <button type="button" class="md-btn" onclick="markdownEditorInstance.wrapSelection('`', '`', 'code')" title="Inline Code (Ctrl+E)">
+                                            <span class="font-mono text-xs text-emerald-600 font-bold">&lt;/&gt;</span>
+                                        </button>
+
+                                        <div class="md-divider"></div>
+
+                                        <!-- Lists & Quotes & Tables -->
+                                        <button type="button" class="md-btn" onclick="markdownEditorInstance.insertAtCursor('\n- Item 1\n- Item 2\n- Item 3\n')" title="Bullet List">
+                                            <span>&bull; List</span>
+                                        </button>
+                                        <button type="button" class="md-btn" onclick="markdownEditorInstance.insertAtCursor('\n1. Step 1\n2. Step 2\n3. Step 3\n')" title="Numbered List">
+                                            <span>1. List</span>
+                                        </button>
+                                        <button type="button" class="md-btn" onclick="markdownEditorInstance.insertTable()" title="Insert Table">
+                                            <span>⊞ Table</span>
+                                        </button>
+                                        <button type="button" class="md-btn" onclick="markdownEditorInstance.insertLink()" title="Insert Link (Ctrl+K)">
+                                            <span>🔗 Link</span>
+                                        </button>
+                                        <button type="button" class="md-btn" onclick="openMediaPicker('editor')" title="Insert Image from Library">
+                                            <span>🖼️ Media</span>
+                                        </button>
+                                    </div>
+
+                                    <!-- Developer Snippet Fast Actions -->
+                                    <div class="md-toolbar-group">
+                                        <button
+                                            type="button"
+                                            onclick="openCodeSnippetModal()"
+                                            class="md-btn md-btn-primary"
+                                            title="Insert Code Block with Language Badge"
+                                        >
+                                            <span>&lt;/&gt; + Code Block</span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onclick="markdownEditorInstance.insertCodeBlock('bash', '# Linux Terminal Command\nsudo apt update &amp;&amp; sudo apt upgrade')"
+                                            class="md-btn md-btn-emerald font-mono"
+                                            title="Insert Bash Terminal block"
+                                        >
+                                            <span class="font-bold">$</span>
+                                            <span>Bash</span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onclick="markdownEditorInstance.insertCodeBlock('error', '[ERROR] exception trace message')"
+                                            class="md-btn text-rose-700 bg-rose-50 border-rose-200 hover:bg-rose-100 font-mono"
+                                            title="Insert Error Stack Trace"
+                                        >
+                                            <span>✖ Error Log</span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onclick="markdownEditorInstance.insertCallout('NOTE')"
+                                            class="md-btn text-slate-700 bg-slate-100 hover:bg-slate-200"
+                                            title="Insert Note Callout"
+                                        >
+                                            <span>+ Note</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Split Panes Wrapper -->
+                                <div class="md-panes-wrapper">
+                                    <!-- Left: Raw Markdown Code Editor -->
+                                    <div class="md-write-pane">
+                                        <textarea
+                                            id="mdTextarea"
+                                            class="md-textarea"
+                                            placeholder="Write your article in Markdown...&#10;&#10;## Introduction&#10;Start typing your content here...&#10;&#10;```bash&#10;sudo systemctl status nginx&#10;```"
+                                        ></textarea>
+                                    </div>
+
+                                    <!-- Right: Real-time Live Preview -->
+                                    <div class="md-preview-pane">
+                                        <div class="md-preview-header">
+                                            <span>Live Rendered Preview</span>
+                                            <span class="text-emerald-600 font-semibold">● Synchronized</span>
+                                        </div>
+                                        <div id="mdPreviewContent" class="article-prose"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Editor Footer Bar -->
+                                <div class="md-footer-bar">
+                                    <div class="flex items-center gap-3 text-xs">
+                                        <span>Markdown Mode</span>
+                                        <span>•</span>
+                                        <span>Tab: 4 spaces</span>
+                                        <span>•</span>
+                                        <span>Shortcuts: Ctrl+B, Ctrl+I, Ctrl+K, Ctrl+E</span>
+                                    </div>
+                                    <div class="text-xs font-mono text-slate-500">
+                                        Live GFM Parser
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- SEO Meta & Google SERP Snippet Preview (Wide Layout Below Editor) -->
@@ -418,6 +585,12 @@
                                 <button type="button" onclick="insertSnippetIntoEditor('code')" class="p-2 rounded-xl bg-slate-50 hover:bg-purple-50 border border-slate-200 text-slate-700 hover:text-purple-800 transition text-[11px] font-medium text-left">
                                     + Code Block
                                 </button>
+                                <button type="button" onclick="insertSnippetIntoEditor('terminal')" class="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 hover:text-slate-900 transition text-[11px] font-medium text-left">
+                                    + Terminal (Bash)
+                                </button>
+                                <button type="button" onclick="insertSnippetIntoEditor('error')" class="p-2 rounded-xl bg-slate-50 hover:bg-red-50 border border-slate-200 text-slate-700 hover:text-red-700 transition text-[11px] font-medium text-left">
+                                    + Error Log
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -427,10 +600,68 @@
     </main>
 </div>
 
+<!-- Custom Code Snippet Inserter Modal -->
+<div id="codeSnippetModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold font-mono text-xs border border-purple-200">
+                    &lt;/&gt;
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900">Insert Code Snippet</h3>
+                    <p class="text-[11px] text-slate-500">Choose a language and paste your code or commands</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeCodeSnippetModal()" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <div class="space-y-3">
+            <div>
+                <label for="snippetLangSelect" class="block text-xs font-semibold text-slate-700 mb-1">Language</label>
+                <select id="snippetLangSelect" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-emerald-500 font-mono">
+                    <option value="bash">Bash / Linux Terminal ($)</option>
+                    <option value="error">Error Log / Stack Trace (✖)</option>
+                    <option value="php">PHP / Laravel (🐘)</option>
+                    <option value="javascript">JavaScript (⚡)</option>
+                    <option value="typescript">TypeScript (TS)</option>
+                    <option value="python">Python (🐍)</option>
+                    <option value="dockerfile">Dockerfile / Docker (🐳)</option>
+                    <option value="nginx">Nginx Config (🟢)</option>
+                    <option value="sql">SQL Query (🗄️)</option>
+                    <option value="html">HTML (🌐)</option>
+                    <option value="css">CSS (🎨)</option>
+                    <option value="json">JSON (📋)</option>
+                    <option value="yaml">YAML (📄)</option>
+                    <option value="plaintext">Plain text</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="snippetCodeInput" class="block text-xs font-semibold text-slate-700 mb-1">Code / Commands</label>
+                <textarea id="snippetCodeInput" rows="8" placeholder="Paste your terminal commands or code here..." class="w-full p-3 bg-slate-950 text-emerald-400 font-mono text-xs rounded-xl border border-slate-800 focus:outline-none focus:border-emerald-500 leading-relaxed"></textarea>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+            <button type="button" onclick="closeCodeSnippetModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 cursor-pointer">
+                Cancel
+            </button>
+            <button type="button" onclick="insertCustomCodeSnippet()" class="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm cursor-pointer">
+                Insert Snippet
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Include Reusable Media Picker Modal -->
 @include('admin.partials.media-picker-modal')
 
-<!-- Self-Hosted CKEditor 5 Script -->
-<script src="/vendor/ckeditor5/ckeditor.js"></script>
-<script src="/vendor/ckeditor5/editor-init.js"></script>
+<!-- Markdown & Split Editor Assets (No CDN) -->
+<link rel="stylesheet" href="/vendor/markdown-editor/markdown-editor.css">
+<script src="/vendor/turndown/turndown.js"></script>
+<script src="/vendor/marked/marked.min.js"></script>
+<script src="/vendor/markdown-editor/markdown-editor.js"></script>
 @endsection
