@@ -74,13 +74,13 @@ body {
 .masonry-grid {
     display: grid;
     grid-template-columns: repeat(1, minmax(0, 1fr));
-    gap: 1.75rem;
+    gap: 1.25rem;
 }
 
 /* Off-screen Card Virtualization (Huge Mobile PageSpeed & Paint Boost) */
 .masonry-grid article:nth-child(n+4) {
     content-visibility: auto;
-    contain-intrinsic-size: 0 420px;
+    contain-intrinsic-size: 0 360px;
 }
 
 @media (min-width: 640px) {
@@ -92,7 +92,7 @@ body {
 @media (min-width: 1024px) {
     .masonry-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 2rem;
+        gap: 1.5rem;
     }
 }
 
