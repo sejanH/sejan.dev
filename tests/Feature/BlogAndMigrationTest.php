@@ -30,9 +30,22 @@ class BlogAndMigrationTest extends TestCase
         $response->assertSee('Migrating from WordPress to Laravel 12');
     }
 
+    public function test_homepage_pagination_fetches_13_on_page_one_and_12_on_subsequent_pages(): void
+    {
+        $response1 = $this->get('/');
+        $response1->assertStatus(200);
+        $postsPage1 = $response1->viewData('posts');
+        $this->assertEquals(13, $postsPage1->perPage());
+
+        $response2 = $this->get('/?page=2');
+        $response2->assertStatus(200);
+        $postsPage2 = $response2->viewData('posts');
+        $this->assertEquals(12, $postsPage2->perPage());
+    }
+
     public function test_single_post_renders_and_increments_views(): void
     {
-        $post = Post::first();
+        $post = Post::published()->first();
         $initialViews = $post->views_count;
 
         $response = $this->get('/posts/' . $post->slug);
@@ -40,6 +53,22 @@ class BlogAndMigrationTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee($post->title);
         $this->assertEquals($initialViews + 1, $post->fresh()->views_count);
+    }
+
+    public function test_draft_post_returns_404_not_found(): void
+    {
+        $draftPost = Post::create([
+            'user_id' => User::first()->id,
+            'title' => 'Unpublished Draft Article',
+            'slug' => 'unpublished-draft-article',
+            'content' => '<p>Draft content here</p>',
+            'status' => 'draft',
+            'published_at' => null,
+        ]);
+
+        $response = $this->get('/posts/' . $draftPost->slug);
+
+        $response->assertStatus(404);
     }
 
     public function test_category_archive_renders(): void

@@ -77,6 +77,11 @@
     <link rel="dns-prefetch" href="https://www.googletagmanager.com">
     <link rel="dns-prefetch" href="https://pl30906445.effectivecpmnetwork.com">
     <link rel="dns-prefetch" href="https://www.highperformanceformat.com">
+    <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com">
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5049261785239472"
+     crossorigin="anonymous"></script>
 
     <!-- Fonts (Non-Render-Blocking Asynchronous Load with Instant System Fallback) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -91,41 +96,41 @@
     @vite(['resources/css/blog.css', 'resources/js/blog.js'])
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900 flex flex-col antialiased">
-    <!-- Top Reading Progress Bar (for single post view) -->
-    <div id="scrollProgress" class="fixed top-0 left-0 h-1 bg-gradient-to-r from-emerald-400 via-teal-500 to-purple-500 z-50 transition-all duration-75" style="width: 0%;"></div>
+    <!-- Top Reading Progress Bar (for single post view & page reading progress) -->
+    <div id="scrollProgress" class="fixed top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 via-teal-500 to-purple-500 z-50 origin-left pointer-events-none transition-transform duration-75" style="transform: scaleX(0); transform-origin: 0% 50%;"></div>
 
     <!-- Sticky Navigation Header -->
-    <header id="mainHeader" class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-xs transition-shadow duration-300 transform-gpu">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
+    <header id="mainHeader" class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-xs transition-all duration-300 transform-gpu">
+        <div class="header-container max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-3.5 flex items-center justify-between gap-4 transition-all duration-300">
             <!-- Brand Logo -->
-            <a href="{{ route('home') }}" class="group flex items-center gap-3 rounded-2xl px-2 py-1.5 transition-all duration-300 hover:bg-slate-100/80">
-                <div class="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-sm font-bold text-white shadow-md shadow-emerald-500/20 transition-all duration-300 group-hover:scale-105 group-hover:rotate-3">
+            <a href="{{ route('home') }}" class="group flex items-center gap-2.5 sm:gap-3 rounded-2xl px-2 py-1 transition-all duration-300 hover:bg-slate-100/80">
+                <div class="brand-logo-icon relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-sm font-bold text-white shadow-md shadow-emerald-500/20 transition-all duration-300 group-hover:scale-105 group-hover:rotate-3 shrink-0">
                     <span class="relative">sz</span>
                 </div>
-                <div>
-                    <p className="text-base font-bold text-slate-900 transition-colors group-hover:text-emerald-600">
-                        <span class="text-base font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">Sejan</span>
+                <div class="brand-logo-text-group flex flex-col justify-center">
+                    <p class="brand-logo-text text-base font-bold text-slate-900 group-hover:text-emerald-600 transition-colors leading-tight">
+                        <span>Sejan</span>
                     </p>
-                    <p class="text-xs text-slate-500 font-medium">Blog</p>
+                    <p class="brand-logo-sub text-[11px] text-slate-500 font-medium leading-none transition-all">Blog</p>
                 </div>
             </a>
 
             <!-- Desktop Navigation Links -->
             <nav class="hidden md:flex items-center gap-1">
-                <a href="{{ route('home') }}" class="text-sm font-medium px-3.5 py-2 rounded-xl transition-all duration-200 {{ request()->routeIs('home') && !request()->has('q') ? 'text-emerald-700 bg-emerald-50 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                <a href="{{ route('home') }}" class="nav-link-item text-sm font-medium px-3.5 py-2 rounded-xl transition-all duration-200 {{ request()->routeIs('home') && !request()->has('q') ? 'text-emerald-700 bg-emerald-50 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
                     Home
                 </a>
-                <a href="{{ route('blog.about') }}" class="text-sm font-medium px-3.5 py-2 rounded-xl transition-all duration-200 {{ request()->routeIs('blog.about') ? 'text-emerald-700 bg-emerald-50 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                <a href="{{ route('blog.about') }}" class="nav-link-item text-sm font-medium px-3.5 py-2 rounded-xl transition-all duration-200 {{ request()->routeIs('blog.about') ? 'text-emerald-700 bg-emerald-50 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
                     About
                 </a>
-                <a href="{{ route('blog.contact') }}" class="text-sm font-medium px-3.5 py-2 rounded-xl transition-all duration-200 {{ request()->routeIs('blog.contact') ? 'text-emerald-700 bg-emerald-50 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                <a href="{{ route('blog.contact') }}" class="nav-link-item text-sm font-medium px-3.5 py-2 rounded-xl transition-all duration-200 {{ request()->routeIs('blog.contact') ? 'text-emerald-700 bg-emerald-50 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
                     Contact
                 </a>
             </nav>
 
             <!-- Search & Actions -->
             <div class="flex items-center gap-3">
-                <form action="{{ route('home') }}" method="GET" class="hidden sm:flex items-center gap-2 rounded-full bg-white border border-slate-200 px-3.5 py-1.5 shadow-2xs transition-all duration-300 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20">
+                <form action="{{ route('home') }}" method="GET" class="search-form-container hidden sm:flex items-center gap-2 rounded-full bg-white border border-slate-200 px-3.5 py-1.5 shadow-2xs transition-all duration-300 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20">
                     <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>

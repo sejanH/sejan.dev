@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\ContactMessage;
 use App\Models\Post;
 use App\Models\Tag;
+use App\Pagination\HomePagePaginator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
@@ -34,7 +35,23 @@ class BlogController extends Controller
             });
         }
 
-        $posts = $query->paginate(9)->withQueryString();
+        $currentPage = max(1, (int) $request->query('page', 1));
+        $perPage = ($currentPage === 1) ? HomePagePaginator::FIRST_PAGE_COUNT : HomePagePaginator::SUBSEQUENT_PAGE_COUNT;
+        $offset = ($currentPage === 1) ? 0 : HomePagePaginator::FIRST_PAGE_COUNT + ($currentPage - 2) * HomePagePaginator::SUBSEQUENT_PAGE_COUNT;
+
+        $total = (clone $query)->count();
+        $items = $query->offset($offset)->limit($perPage)->get();
+
+        $posts = (new HomePagePaginator(
+            $items,
+            $total,
+            $perPage,
+            $currentPage,
+            [
+                'path' => HomePagePaginator::resolveCurrentPath(),
+                'query' => $request->query(),
+            ]
+        ))->withQueryString();
 
         $categories = Category::withCount('publishedPosts')
             ->having('published_posts_count', '>', 0)
@@ -61,6 +78,7 @@ class BlogController extends Controller
     public function show(string $slug): View
     {
         $post = Post::with(['user', 'categories', 'tags', 'approvedRootComments.approvedReplies'])
+            ->published()
             ->where('slug', $slug)
             ->firstOrFail();
 

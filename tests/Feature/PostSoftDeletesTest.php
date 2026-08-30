@@ -19,7 +19,7 @@ class PostSoftDeletesTest extends TestCase
         parent::setUp();
         $this->seed(DatabaseSeeder::class);
 
-        $this->admin = User::where('email', 'admin@sejan.dev')->first();
+        $this->admin = User::where('email', 'sejan840@protonmail.com')->first();
     }
 
     public function test_admin_can_soft_delete_post_to_trash(): void

@@ -40,7 +40,7 @@ class AuthAndDashboardTest extends TestCase
         $this->seed(DatabaseSeeder::class);
 
         $response = $this->post('/login', [
-            'email' => 'admin@sejan.dev',
+            'email' => 'sejan840@protonmail.com',
             'password' => 'password',
         ]);
 
@@ -50,7 +50,7 @@ class AuthAndDashboardTest extends TestCase
         $adminResponse = $this->get('/admin');
         $adminResponse->assertStatus(200);
         $adminResponse->assertSeeText('Analytics & Overview', false);
-        $adminResponse->assertSee('admin@sejan.dev');
+        $adminResponse->assertSee('sejan840@protonmail.com');
     }
 
     public function test_users_cannot_authenticate_with_invalid_password(): void
@@ -58,7 +58,7 @@ class AuthAndDashboardTest extends TestCase
         $this->seed(DatabaseSeeder::class);
 
         $response = $this->post('/login', [
-            'email' => 'admin@sejan.dev',
+            'email' => 'sejan840@protonmail.com',
             'password' => 'wrong-password',
         ]);
 
@@ -89,7 +89,7 @@ class AuthAndDashboardTest extends TestCase
         $this->seed(DatabaseSeeder::class);
 
         $this->post('/login', [
-            'email' => 'admin@sejan.dev',
+            'email' => 'sejan840@protonmail.com',
             'password' => 'password',
         ]);
 

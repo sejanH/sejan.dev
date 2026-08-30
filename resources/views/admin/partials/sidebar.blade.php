@@ -133,7 +133,7 @@
                         <span class="truncate">{{ auth()->user()->name ?? 'Admin' }}</span>
                         <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
                     </div>
-                    <div class="text-[10px] text-slate-400 truncate font-mono">{{ auth()->user()->email ?? 'admin@sejan.dev' }}</div>
+                    <div class="text-[10px] text-slate-400 truncate font-mono">{{ auth()->user()->email ?? 'sejan840@protonmail.com' }}</div>
                 </div>
             </div>
 

@@ -18,13 +18,85 @@ body {
     letter-spacing: 0.01em;
 }
 
-/* Sticky Header Smooth Rendering & Flicker Prevention */
+/* Sticky Header Smooth Rendering & Dynamic Scroll Shrink */
 #mainHeader {
     -webkit-transform: translate3d(0, 0, 0);
     transform: translate3d(0, 0, 0);
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
-    will-change: transform, box-shadow;
+    will-change: transform, box-shadow, background-color, border-color;
+    transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#mainHeader .header-container {
+    transition: padding 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#mainHeader .brand-logo-icon {
+    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                height 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                font-size 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                border-radius 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#mainHeader .brand-logo-text {
+    transition: font-size 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#mainHeader .brand-logo-sub {
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                font-size 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#mainHeader .nav-link-item {
+    transition: padding 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                font-size 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#mainHeader .search-form-container {
+    transition: padding 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Scrolled Header State: Compact & Enhanced Glassmorphism */
+#mainHeader.header-scrolled {
+    background-color: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom-color: rgba(203, 213, 225, 0.9);
+    box-shadow: 0 4px 18px -2px rgba(15, 23, 42, 0.07), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+}
+
+#mainHeader.header-scrolled .header-container {
+    padding-top: 0.375rem; /* py-1.5 */
+    padding-bottom: 0.375rem;
+}
+
+#mainHeader.header-scrolled .brand-logo-icon {
+    width: 2rem; /* 32px (h-8 w-8) down from 40px */
+    height: 2rem;
+    font-size: 0.75rem;
+    border-radius: 0.5rem;
+}
+
+#mainHeader.header-scrolled .brand-logo-text {
+    font-size: 0.875rem; /* text-sm down from text-base */
+}
+
+#mainHeader.header-scrolled .brand-logo-sub {
+    font-size: 0.625rem;
+    opacity: 0.85;
+}
+
+#mainHeader.header-scrolled .nav-link-item {
+    padding-top: 0.375rem; /* py-1.5 down from py-2 */
+    padding-bottom: 0.375rem;
+}
+
+#mainHeader.header-scrolled .search-form-container {
+    padding-top: 0.25rem; /* py-1 down from py-1.5 */
+    padding-bottom: 0.25rem;
 }
 
 /* Glassmorphism & Light Theme Cards */

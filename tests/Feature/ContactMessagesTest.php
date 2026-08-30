@@ -20,7 +20,7 @@ class ContactMessagesTest extends TestCase
         $this->withoutMiddleware(\Spatie\Honeypot\ProtectAgainstSpam::class);
         $this->seed(DatabaseSeeder::class);
 
-        $this->admin = User::where('email', 'admin@sejan.dev')->first();
+        $this->admin = User::where('email', 'sejan840@protonmail.com')->first();
     }
 
     public function test_contact_page_renders_successfully(): void

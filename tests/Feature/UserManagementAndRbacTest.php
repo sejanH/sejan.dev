@@ -20,7 +20,7 @@ class UserManagementAndRbacTest extends TestCase
         parent::setUp();
         $this->seed(DatabaseSeeder::class);
 
-        $this->admin = User::where('email', 'admin@sejan.dev')->first();
+        $this->admin = User::where('email', 'sejan840@protonmail.com')->first();
     }
 
     public function test_admin_can_access_users_management_index(): void

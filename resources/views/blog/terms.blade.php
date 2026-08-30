@@ -68,7 +68,7 @@
 
             <h2>7. Contact Information</h2>
             <p>
-                If you have any questions regarding these terms, please reach out via our <a href="{{ route('blog.contact') }}">Contact Page</a> or by emailing <code>admin@sejan.dev</code>.
+                If you have any questions regarding these terms, please reach out via our <a href="{{ route('blog.contact') }}">Contact Page</a> or by emailing <code>sejan840@protonmail.com</code>.
             </p>
         </article>
     </section>

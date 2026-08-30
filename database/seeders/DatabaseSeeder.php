@@ -18,7 +18,7 @@ class DatabaseSeeder extends Seeder
         // 1. Seed Roles and Permissions
         $this->call(RolesAndPermissionsSeeder::class);
 
-        $adminEmail = env('ADMIN_EMAIL', 'admin@sejan.dev');
+        $adminEmail = env('ADMIN_EMAIL', 'sejan840@protonmail.com');
         $adminPassword = env('ADMIN_PASSWORD', 'password');
         $adminName = env('ADMIN_NAME', 'Sejan (Admin)');
 

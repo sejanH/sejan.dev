@@ -1,34 +1,65 @@
 // Modern, Ultra-Light JavaScript for Sejan Blog Frontend (Zero Forced Reflows)
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Reading Progress Bar (for single post pages)
+    // 1. Reading Progress Bar
     const progressEl = document.getElementById('scrollProgress');
     if (progressEl) {
         let maxScroll = 0;
         let ticking = false;
 
         const calculateMaxScroll = () => {
-            maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+            const doc = document.documentElement;
+            const body = document.body;
+            const scrollHeight = Math.max(
+                body.scrollHeight, doc.scrollHeight,
+                body.offsetHeight, doc.offsetHeight,
+                body.clientHeight, doc.clientHeight
+            );
+            maxScroll = Math.max(1, scrollHeight - window.innerHeight);
+        };
+
+        const updateProgress = () => {
+            const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+            const progress = Math.min(1, Math.max(0, scrollY / maxScroll));
+            progressEl.style.transform = `scaleX(${progress})`;
+            ticking = false;
         };
 
         calculateMaxScroll();
-        window.addEventListener('resize', calculateMaxScroll, { passive: true });
+        window.addEventListener('resize', () => { calculateMaxScroll(); updateProgress(); }, { passive: true });
+        window.addEventListener('load', () => { calculateMaxScroll(); updateProgress(); }, { passive: true });
 
-        const onScroll = () => {
+        window.addEventListener('scroll', () => {
             if (!ticking) {
-                window.requestAnimationFrame(() => {
-                    const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
-                    const progress = Math.min(100, Math.max(0, (scrollY / maxScroll) * 100));
-                    progressEl.style.transform = `scaleX(${progress / 100})`;
-                    ticking = false;
-                });
+                window.requestAnimationFrame(updateProgress);
                 ticking = true;
+            }
+        }, { passive: true });
+
+        updateProgress();
+    }
+
+    // 2. Dynamic Sticky Navigation Header Shrinking on Scroll
+    const headerEl = document.getElementById('mainHeader');
+    if (headerEl) {
+        let isScrolled = false;
+        const checkHeaderScroll = () => {
+            const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+            const shouldBeScrolled = scrollY > 20;
+            if (shouldBeScrolled !== isScrolled) {
+                isScrolled = shouldBeScrolled;
+                if (isScrolled) {
+                    headerEl.classList.add('header-scrolled');
+                } else {
+                    headerEl.classList.remove('header-scrolled');
+                }
             }
         };
 
-        window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('scroll', checkHeaderScroll, { passive: true });
+        checkHeaderScroll();
     }
 
-    // 2. Mobile Menu Toggle
+    // 3. Mobile Menu Toggle
     const menuBtn = document.getElementById('mobileMenuBtn');
     const mobileMenu = document.getElementById('mobileMenu');
     if (menuBtn && mobileMenu) {

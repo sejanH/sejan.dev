@@ -90,7 +90,7 @@
 
             <h2>9. Contact Us</h2>
             <p>
-                If you have any questions or require more information about our Privacy Policy, please contact us via our <a href="{{ route('blog.contact') }}">Contact Page</a> or email us at <code>admin@sejan.dev</code>.
+                If you have any questions or require more information about our Privacy Policy, please contact us via our <a href="{{ route('blog.contact') }}">Contact Page</a> or email us at <code>sejan840@protonmail.com</code>.
             </p>
         </article>
     </section>
